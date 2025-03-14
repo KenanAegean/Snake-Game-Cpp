@@ -18,17 +18,40 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Apple.h" />
+    <ClInclude Include="GameObject.h" />
+    <ClInclude Include="GameOverState.h" />
+    <ClInclude Include="GamePlayState.h" />
+    <ClInclude Include="GameState.h" />
+    <ClInclude Include="MainMenuState.h" />
+    <ClInclude Include="Snake.h" />
+    <ClInclude Include="SnakeGraphics.h" />
+    <ClInclude Include="SnakeInput.h" />
+    <ClInclude Include="StateMachine.h" />
+    <ClInclude Include="World.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Apple.cpp" />
+    <ClCompile Include="GameOverState.cpp" />
+    <ClCompile Include="GamePlayState.cpp" />
+    <ClCompile Include="MainMenuState.cpp" />
+    <ClCompile Include="Snake.cpp" />
+    <ClCompile Include="SnakeGame.cpp" />
+    <ClCompile Include="SnakeGraphics.cpp" />
+    <ClCompile Include="SnakeInput.cpp" />
+    <ClCompile Include="World.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{F5CC1819-27F1-43F0-883D-F98C352C529D}</ProjectGuid>
+    <ProjectGuid>{E59CA897-004D-4F58-9F89-12C30532D469}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>SnakeConsoleGame</RootNamespace>
+    <RootNamespace>SnakeGame</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
-    <RootNamespace>SnakeGame</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -154,30 +177,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Apple.cpp" />
-    <ClCompile Include="GameOverState.cpp" />
-    <ClCompile Include="GamePlayState.cpp" />
-    <ClCompile Include="MainMenuState.cpp" />
-    <ClCompile Include="Snake.cpp" />
-    <ClCompile Include="SnakeGame.cpp" />
-    <ClCompile Include="SnakeGraphics.cpp" />
-    <ClCompile Include="SnakeInput.cpp" />
-    <ClCompile Include="World.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Apple.h" />
-    <ClInclude Include="GameObject.h" />
-    <ClInclude Include="GameOverState.h" />
-    <ClInclude Include="GamePlayState.h" />
-    <ClInclude Include="GameState.h" />
-    <ClInclude Include="MainMenuState.h" />
-    <ClInclude Include="Snake.h" />
-    <ClInclude Include="SnakeGraphics.h" />
-    <ClInclude Include="SnakeInput.h" />
-    <ClInclude Include="StateMachine.h" />
-    <ClInclude Include="World.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
