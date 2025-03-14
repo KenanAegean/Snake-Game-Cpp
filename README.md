@@ -1,1 +1,1 @@
-# Snake-Game-Terminal
+# Snake-Game-Cpp
