@@ -5,7 +5,7 @@
 
 Snake::Snake(const Vec2& pos)
     : GameObject(pos), currentDirection(Direction::Right), speed(5.0f),
-      movementAccumulator(0.0f), moveInterval(0.2f)
+      movementAccumulator(0.0f), moveInterval(0.2f), pendingGrowth(0) // initialize pendingGrowth
 {
     segments.push_back(pos);
     std::cout << "Snake created at (" << pos.x << ", " << pos.y << ")\n";
@@ -30,9 +30,19 @@ void Snake::Update(float deltaTime)
         case Direction::Right: newHead.x += 1; break;
     }
 
-    // Insert new head and remove the tail.
+    // Insert new head.
     segments.push_front(newHead);
-    segments.pop_back();
+    
+    // Update the GameObject's position for proper collision detection.
+    position = newHead;
+    
+    // If growth is pending, leave the tail to grow the snake.
+    if (pendingGrowth > 0) {
+         pendingGrowth--;
+         // Do not remove the tail segment.
+    } else {
+         segments.pop_back();
+    }
 
     std::cout << "Snake moved. New head: (" << newHead.x << ", " << newHead.y << ")\n";
 }
@@ -77,9 +87,8 @@ void Snake::ChangeDirection(Direction newDir)
 
 void Snake::Grow()
 {
-    // Duplicate the last segment.
-    segments.push_back(segments.back());
-    std::cout << "Snake grew. Length now: " << segments.size() << "\n";
+    pendingGrowth++;
+    std::cout << "Snake will grow. Pending segments: " << pendingGrowth << "\n";
 }
 
 bool Snake::HasSelfCollision() const

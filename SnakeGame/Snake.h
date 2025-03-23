@@ -2,7 +2,7 @@
 #include "GameObject.h"
 #include <deque>
 #include <iostream>
-#include <functional> // <-- added for std::function
+#include <functional> // for std::function
 
 enum class Direction {
     Up,
@@ -28,7 +28,7 @@ public:
     // Change the snake's moving direction.
     void ChangeDirection(Direction newDir);
     
-    // Grow the snake by duplicating its tail segment.
+    // Grow the snake by incrementing the pending growth counter.
     void Grow();
     
     // Check if the snake's head collides with any other segment.
@@ -38,7 +38,7 @@ public:
     const std::deque<Vec2>& GetSegments() const;
     
     // Callback triggered when the snake eats an apple.
-    std::function<void()> onAppleEaten; // <-- new callback
+    std::function<void()> onAppleEaten;
 
 private:
     std::deque<Vec2> segments;  // The front element is the head.
@@ -48,4 +48,6 @@ private:
     // Timer variables to control movement updates.
     float movementAccumulator;
     const float moveInterval;   // Time interval (in seconds) between moves.
+    
+    int pendingGrowth;          // Number of segments to grow.
 };
