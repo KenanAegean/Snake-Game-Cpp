@@ -16,38 +16,50 @@ public:
     Snake(const Vec2& pos);
     virtual ~Snake();
 
-    // Update the snake's position using a movement timer.
+    // Called each frame to update the snake's position.
     void Update(float deltaTime) override;
     
-    // Render each snake segment.
+    // Called each frame to render the snake segments.
     void Render(SnakeGraphics* graphics) override;
     
-    // Handle collisions with other game objects.
+    // Handles collisions with other game objects (Apple, Wall, etc.).
     void OnCollision(GameObject* other) override;
     
-    // Change the snake's moving direction.
+    // Change the snake's movement direction.
     void ChangeDirection(Direction newDir);
     
     // Grow the snake by incrementing the pending growth counter.
     void Grow();
     
-    // Check if the snake's head collides with any other segment.
+    // Check if the snake's head collides with any other segment of its body.
     bool HasSelfCollision() const;
     
-    // Retrieve snake segments (for debugging or further collision checking).
+    // Access snake segments (for collision checks or debugging).
     const std::deque<Vec2>& GetSegments() const;
     
-    // Callback triggered when the snake eats an apple.
+    // Called when the snake eats an apple.
     std::function<void()> onAppleEaten;
+    
+    // Called when the snake collides with a wall (or triggers a game over).
+    std::function<void()> onGameOver;
+
+    // Override to let the world skip updating or rendering this snake if inactive.
+    bool IsActive() const override { return active; }
+
+    bool HasCollidedWithWall() const { return hasCollidedWithWall; }
 
 private:
-    std::deque<Vec2> segments;  // The front element is the head.
+    std::deque<Vec2> segments;  // Front element is the head
     Direction currentDirection;
-    float speed;                // Reserved for future use.
     
-    // Timer variables to control movement updates.
-    float movementAccumulator;
-    const float moveInterval;   // Time interval (in seconds) between moves.
+    float speed;                // (Reserved for future use)
+    float movementAccumulator;  // Accumulates time between moves
+    const float moveInterval;   // How often (seconds) the snake moves
     
-    int pendingGrowth;          // Number of segments to grow.
+    int pendingGrowth;          // How many extra segments to add
+    
+    // If false, the snake won't update or render anymore.
+    bool active;
+
+    bool hasCollidedWithWall = false;
 };

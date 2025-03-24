@@ -1,8 +1,11 @@
 ﻿#include "World.h"
 #include "Apple.h"
 #include "Snake.h"
+#include "Wall.h"
 #include <algorithm>
 #include <cstdlib> // For rand()
+#include <fstream>
+#include <iostream>
 
 World::World() {}
 
@@ -94,4 +97,25 @@ void World::SpawnApple(int maxColumns, int maxRows) {
     
     // Add the apple even if a valid position wasn't found after many attempts.
     AddGameObject(std::make_unique<Apple>(Vec2{ x, y }));
+}
+
+void World::LoadLevel(const std::string& filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open level file: " << filePath << std::endl;
+        return;
+    }
+    std::string line;
+    int y = 0;
+    while (std::getline(file, line)) {
+        for (size_t x = 0; x < line.size(); x++) {
+            char c = line[x];
+            if (c == '#') {
+                // Create a wall at (x, y).
+                AddGameObject(std::make_unique<Wall>(Vec2{ static_cast<int>(x), y }));
+            }
+        }
+        y++;
+    }
+    file.close();
 }

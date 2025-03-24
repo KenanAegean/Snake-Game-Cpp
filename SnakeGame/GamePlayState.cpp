@@ -7,7 +7,9 @@
 #include <iostream>
 #include <sstream>
 
-GamePlayState::GamePlayState() : snake(nullptr), gridColumns(0), gridRows(0), score(0) {}
+GamePlayState::GamePlayState()
+    : snake(nullptr), gridColumns(0), gridRows(0), score(0), gameOverTriggered(false)
+{}
 
 GamePlayState::~GamePlayState() {}
 
@@ -17,7 +19,7 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
 
     // Store grid dimensions.
     gridColumns = graphics->GetNumColumns();
-    gridRows = graphics->GetNumRows();
+    gridRows    = graphics->GetNumRows();
     int centerX = gridColumns / 2;
     int centerY = gridRows / 2;
 
@@ -25,16 +27,22 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
     std::unique_ptr<Snake> newSnake = std::make_unique<Snake>(Vec2{ centerX, centerY });
     snake = newSnake.get();
 
-    // Set up callback to increment score when an apple is eaten.
+    // When the snake eats an apple, increment the score.
     snake->onAppleEaten = [this]() {
         score++;
         std::cout << "Score increased to " << score << "\n";
     };
 
+    // Note: We no longer assign snake->onGameOver here.
+    // Instead, game over detection is handled in Update().
+
     // Add the snake to the world.
     world->AddGameObject(std::move(newSnake));
 
-    // Spawn an initial apple using the safe apple spawning logic.
+    // Load walls from a text file (ensure the file doesn't exceed gridColumns or gridRows).
+    world->LoadLevel("level1.txt");
+
+    // Spawn an initial apple.
     world->SpawnApple(gridColumns, gridRows);
 }
 
@@ -43,22 +51,35 @@ void GamePlayState::Update(float deltaTime) {
         world->Update(deltaTime);
     }
     
-    // Check for wall collisions or self-collision.
-    if (snake) {
-        Vec2 head = snake->GetSegments().front();
-        if (head.x < 0 || head.x >= gridColumns ||
-            head.y < 0 || head.y >= gridRows ||
-            snake->HasSelfCollision()) {
-            std::cout << "Game Over triggered: Collision detected.\n";
+    if (!gameOverTriggered && snake) {
+        // Check if the snake collided with a wall.
+        if (snake->HasCollidedWithWall()) {
+            gameOverTriggered = true;
+            std::cout << "Game Over triggered: Collision with wall (flag detected).\n";
             if (onGameOver) {
                 onGameOver();
             }
         }
+        else {
+            // Otherwise, check for out-of-bounds or self-collision.
+            Vec2 head = snake->GetSegments().front();
+            if (head.x < 0 || head.x >= gridColumns ||
+                head.y < 0 || head.y >= gridRows ||
+                snake->HasSelfCollision()) {
+                gameOverTriggered = true;
+                std::cout << "Game Over triggered: Collision detected.\n";
+                if (onGameOver) {
+                    onGameOver();
+                }
+                }
+        }
     }
 }
 
+
+
 void GamePlayState::Render(SnakeGraphics* graphics) {
-    // Clear the grid.
+    // Clear the screen.
     Color backgroundColor(0, 0, 0);
     for (int y = 0; y < graphics->GetNumRows(); y++) {
         for (int x = 0; x < graphics->GetNumColumns(); x++) {
@@ -66,12 +87,12 @@ void GamePlayState::Render(SnakeGraphics* graphics) {
         }
     }
     
-    // Render the game world (snake, apple, etc.).
+    // Render all objects (snake, walls, apples, etc.).
     if (world) {
         world->Render(graphics);
     }
     
-    // Render the score at the top-left corner.
+    // Display score at top-left.
     std::wstringstream ss;
     ss << L"Score: " << score;
     graphics->PlotText(1, 0, 2, backgroundColor, ss.str().c_str(), Color(255, 255, 255), SnakeGraphics::Left);
@@ -81,23 +102,12 @@ void GamePlayState::KeyDown(int key) {
     if (!snake) {
         return;
     }
-    
-    // Update snake direction based on key press.
     switch (key) {
-    case VK_LEFT:
-        snake->ChangeDirection(Direction::Left);
-        break;
-    case VK_RIGHT:
-        snake->ChangeDirection(Direction::Right);
-        break;
-    case VK_UP:
-        snake->ChangeDirection(Direction::Up);
-        break;
-    case VK_DOWN:
-        snake->ChangeDirection(Direction::Down);
-        break;
-    default:
-        break;
+    case VK_LEFT:  snake->ChangeDirection(Direction::Left);  break;
+    case VK_RIGHT: snake->ChangeDirection(Direction::Right); break;
+    case VK_UP:    snake->ChangeDirection(Direction::Up);    break;
+    case VK_DOWN:  snake->ChangeDirection(Direction::Down);  break;
+    default: break;
     }
 }
 

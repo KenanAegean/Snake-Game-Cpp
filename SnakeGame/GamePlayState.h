@@ -27,5 +27,8 @@ private:
     int gridRows;
     
     // Score tracking variable.
-    int score; // <-- new variable for score
+    int score;
+    
+    // Flag to ensure game over is triggered only once.
+    bool gameOverTriggered;
 };

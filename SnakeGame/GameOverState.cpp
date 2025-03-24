@@ -1,4 +1,7 @@
 ﻿#include "GameOverState.h"
+
+#include <iostream>
+
 #include "SnakeGraphics.h"
 #include <windows.h>
 
@@ -8,7 +11,8 @@ GameOverState::GameOverState(const std::string& message)
 GameOverState::~GameOverState() {}
 
 void GameOverState::Init(SnakeGraphics* graphics) {
-    // Initialization for Game Over state if needed.
+    std::cout << "GameOverState initialized." << std::endl;
+    // (Optional: add additional initialization logic here.)
 }
 
 void GameOverState::Update(float deltaTime) {

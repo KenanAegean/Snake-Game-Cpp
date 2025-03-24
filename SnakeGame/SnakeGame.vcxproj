@@ -29,6 +29,7 @@
     <ClInclude Include="SnakeGraphics.h" />
     <ClInclude Include="SnakeInput.h" />
     <ClInclude Include="StateMachine.h" />
+    <ClInclude Include="Wall.h" />
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
@@ -40,7 +41,11 @@
     <ClCompile Include="SnakeGame.cpp" />
     <ClCompile Include="SnakeGraphics.cpp" />
     <ClCompile Include="SnakeInput.cpp" />
+    <ClCompile Include="Wall.cpp" />
     <ClCompile Include="World.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="level1.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

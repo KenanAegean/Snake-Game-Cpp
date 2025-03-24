@@ -2,6 +2,7 @@
 #include "GameObject.h"
 #include <vector>
 #include <memory>
+#include <string>
 
 class World {
 public:
@@ -22,6 +23,9 @@ public:
 
     // Spawn an apple at a random position.
     void SpawnApple(int maxColumns, int maxRows);
+
+    // Load level from a text file.
+    void LoadLevel(const std::string& filePath);
 
 private:
     std::vector<std::unique_ptr<GameObject>> gameObjects;
