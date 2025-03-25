@@ -103,20 +103,20 @@ void GamePlayState::Update(float deltaTime) {
 
 
 void GamePlayState::Render(SnakeGraphics* graphics) {
-    // Clear the screen.
     Color backgroundColor(0, 0, 0);
+    // Clear the screen.
     for (int y = 0; y < graphics->GetNumRows(); y++) {
         for (int x = 0; x < graphics->GetNumColumns(); x++) {
             graphics->PlotTile(x, y, 0, backgroundColor, backgroundColor, L' ');
         }
     }
     
-    // Render all objects (snake, walls, apples, etc.).
+    // Render game objects (snake, walls, apples).
     if (world) {
         world->Render(graphics);
     }
     
-    // Display score and level at the top-left.
+    // Display score and level text.
     std::wstringstream ss;
     ss << L"Score: " << score << L"   Level: " << currentLevel;
     graphics->PlotText(1, 0, 2, backgroundColor, ss.str().c_str(), Color(255, 255, 255), SnakeGraphics::Left);

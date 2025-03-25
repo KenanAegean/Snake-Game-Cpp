@@ -1,12 +1,13 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <functional>
 #include "SnakeGraphics.h"
 #include "SnakeInput.h"
 #include "StateMachine.h"
 #include "MainMenuState.h"
 #include "GamePlayState.h"
-#include "GameOverState.h" // Include the new game over state
+#include "GameOverState.h"
 
 const int SCREEN_WIDTH  = 800;
 const int SCREEN_HEIGHT = 600;
@@ -30,16 +31,32 @@ int main() {
     // Create the state machine.
     StateMachine stateMachine;
     
-    // Create MainMenuState and set the callback to transition to gameplay.
-    auto mainMenuState = std::make_unique<MainMenuState>();
-    mainMenuState->onStartGame = [&]() {
-        auto gamePlayState = std::make_unique<GamePlayState>();
-        // Set the game over callback to transition to GameOverState.
-        gamePlayState->onGameOver = [&]() {
-            stateMachine.ChangeState(std::make_unique<GameOverState>("Game Over!"), &graphics);
+    // Define a persistent lambda for starting a new game.
+    std::function<void()> startGame = [&]() {
+        auto gameplayState = std::make_unique<GamePlayState>();
+        // Set up the onGameOver callback for gameplayState.
+        gameplayState->onGameOver = [&, gp = gameplayState.get()]() {
+            int finalScore = gp->GetScore();
+            int finalLevel = gp->GetLevel();
+            auto gameOverState = std::make_unique<GameOverState>("Game Over!", finalScore, finalLevel);
+            // When Replay is pressed, call startGame to create a fresh game state.
+            gameOverState->onReplay = startGame;
+            // When Main Menu is pressed, create a new MainMenuState with onStartGame = startGame.
+            gameOverState->onMainMenu = [&]() {
+                auto newMainMenuState = std::make_unique<MainMenuState>();
+                // Set the flag so that MainMenuState clears the screen in its Render.
+                newMainMenuState->SetIsMainMenuReturned(true);
+                newMainMenuState->onStartGame = startGame; // assuming startGame is your persistent lambda.
+                stateMachine.ChangeState(std::move(newMainMenuState), &graphics);
+            };
+            stateMachine.ChangeState(std::move(gameOverState), &graphics);
         };
-        stateMachine.ChangeState(std::move(gamePlayState), &graphics);
+        stateMachine.ChangeState(std::move(gameplayState), &graphics);
     };
+
+    // Create the initial Main Menu state and assign startGame to its onStartGame callback.
+    auto mainMenuState = std::make_unique<MainMenuState>();
+    mainMenuState->onStartGame = startGame;
     stateMachine.ChangeState(std::move(mainMenuState), &graphics);
     
     // Forward key inputs to the state machine.
@@ -51,27 +68,22 @@ int main() {
     bool running = true;
     auto lastFrame = std::chrono::high_resolution_clock::now();
     while (running) {
-        // Process window messages.
         if (!graphics.UpdateWindowMessages()) {
             running = false;
             break;
         }
         
-        // Calculate delta time.
         auto now = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> deltaTime = now - lastFrame;
         lastFrame = now;
         
-        // Update and render the active state.
         stateMachine.Update(deltaTime.count());
         stateMachine.Render(&graphics);
         graphics.Render();
         
-        // Simple frame rate control.
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     
-    // Cleanup input.
     SnakeInput::CleanUp();
     return 0;
 }

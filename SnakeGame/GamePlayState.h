@@ -16,6 +16,8 @@ public:
     void Render(SnakeGraphics* graphics) override;
     void KeyDown(int key) override;
     void CleanUp() override;
+    int GetScore() const { return score; }
+    int GetLevel() const { return currentLevel; }
 
     // Callback to transition to the Game Over state.
     std::function<void()> onGameOver;

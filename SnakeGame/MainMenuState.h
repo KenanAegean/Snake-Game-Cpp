@@ -18,7 +18,13 @@ public:
     // Callback that will be set by the main function to change state.
     std::function<void()> onStartGame;
     
+    // Setter for the clear screen flag.
+    void SetIsMainMenuReturned(bool value) { isMainMenuReturned = value; }
+    
 private:
     int selectedOption;
     std::vector<std::wstring> menuOptions;
+    
+    // Flag to indicate that we are returning to main menu and need to clear the screen.
+    bool isMainMenuReturned;
 };
