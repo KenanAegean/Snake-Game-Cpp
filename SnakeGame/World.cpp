@@ -72,21 +72,27 @@ void World::SpawnApple(int maxColumns, int maxRows) {
     int attempts = 0;
     const int maxAttempts = 1000;
     
-    // Attempt to find a position that is not occupied by any snake segment.
+    // Attempt to find a position that is not occupied by a snake segment or a wall.
     do {
         x = rand() % maxColumns;
         y = rand() % maxRows;
         validPosition = true;
         
-        // Check all game objects to see if a snake occupies the position.
+        // Check all game objects to see if the position is already occupied.
         for (const auto& obj : gameObjects) {
-            Snake* snake = dynamic_cast<Snake*>(obj.get());
-            if (snake) {
+            // If the object is a Snake, check all of its segments.
+            if (Snake* snake = dynamic_cast<Snake*>(obj.get())) {
                 for (const auto& segment : snake->GetSegments()) {
                     if (segment.x == x && segment.y == y) {
                         validPosition = false;
                         break;
                     }
+                }
+            }
+            // Also check if the object is a Wall.
+            if (Wall* wall = dynamic_cast<Wall*>(obj.get())) {
+                if (wall->position.x == x && wall->position.y == y) {
+                    validPosition = false;
                 }
             }
             if (!validPosition)
@@ -95,9 +101,10 @@ void World::SpawnApple(int maxColumns, int maxRows) {
         attempts++;
     } while (!validPosition && attempts < maxAttempts);
     
-    // Add the apple even if a valid position wasn't found after many attempts.
+    // Even if we didn't find a valid spot after many attempts, spawn an apple.
     AddGameObject(std::make_unique<Apple>(Vec2{ x, y }));
 }
+
 
 void World::LoadLevel(const std::string& filePath) {
     std::ifstream file(filePath);
@@ -118,4 +125,13 @@ void World::LoadLevel(const std::string& filePath) {
         y++;
     }
     file.close();
+}
+
+void World::ClearWalls() {
+    gameObjects.erase(
+        std::remove_if(gameObjects.begin(), gameObjects.end(),
+            [](const std::unique_ptr<GameObject>& obj) {
+                return dynamic_cast<Wall*>(obj.get()) != nullptr;
+            }),
+        gameObjects.end());
 }

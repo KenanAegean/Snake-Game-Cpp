@@ -26,8 +26,14 @@ private:
     int gridColumns;
     int gridRows;
     
-    // Score tracking variable.
+    // Overall score (accumulated across levels).
     int score;
+    
+    // Track the current level (starting at 1, corresponding to "level1.txt").
+    int currentLevel;
+    
+    // Number of apples eaten in the current level.
+    int applesEatenThisLevel;
     
     // Flag to ensure game over is triggered only once.
     bool gameOverTriggered;

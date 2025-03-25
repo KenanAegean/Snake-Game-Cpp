@@ -27,6 +27,8 @@ public:
     // Load level from a text file.
     void LoadLevel(const std::string& filePath);
 
+    void ClearWalls();
+
 private:
     std::vector<std::unique_ptr<GameObject>> gameObjects;
 };

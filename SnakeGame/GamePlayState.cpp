@@ -6,9 +6,12 @@
 #include <memory>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 GamePlayState::GamePlayState()
-    : snake(nullptr), gridColumns(0), gridRows(0), score(0), gameOverTriggered(false)
+    : snake(nullptr), gridColumns(0), gridRows(0),
+      score(0), currentLevel(1), applesEatenThisLevel(0),
+      gameOverTriggered(false)
 {}
 
 GamePlayState::~GamePlayState() {}
@@ -27,24 +30,45 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
     std::unique_ptr<Snake> newSnake = std::make_unique<Snake>(Vec2{ centerX, centerY });
     snake = newSnake.get();
 
-    // When the snake eats an apple, increment the score.
+    // When the snake eats an apple, increment the score and the level-specific counter.
     snake->onAppleEaten = [this]() {
         score++;
+        applesEatenThisLevel++;
         std::cout << "Score increased to " << score << "\n";
+        // Check if 10 apples have been eaten in the current level.
+        if (applesEatenThisLevel >= 10) {
+            // Build the next level file name, e.g. "level2.txt"
+            std::string nextLevelFile = std::string("level") + std::to_string(currentLevel + 1) + ".txt";
+            std::ifstream file(nextLevelFile);
+            if (file.good()) {
+                currentLevel++;
+                applesEatenThisLevel = 0;  // Reset counter for the new level.
+                std::cout << "Loading next level: " << nextLevelFile << "\n";
+                // Clear current walls and load the new level.
+                world->ClearWalls();
+                world->LoadLevel(nextLevelFile);
+            } else {
+                std::cout << "Next level file not found: " << nextLevelFile << "\n";
+            }
+        }
     };
 
-    // Note: We no longer assign snake->onGameOver here.
-    // Instead, game over detection is handled in Update().
+    // For wall collision, let the snake mark itself or set a dedicated flag.
+    snake->onGameOver = [this]() {
+        std::cout << "Game Over triggered: Collision detected.\n";
+        // Do not call onGameOver here; we let GamePlayState::Update handle the transition.
+    };
 
     // Add the snake to the world.
     world->AddGameObject(std::move(newSnake));
 
-    // Load walls from a text file (ensure the file doesn't exceed gridColumns or gridRows).
+    // Load walls from the initial level.
     world->LoadLevel("level1.txt");
 
     // Spawn an initial apple.
     world->SpawnApple(gridColumns, gridRows);
 }
+
 
 void GamePlayState::Update(float deltaTime) {
     if (world) {
@@ -92,9 +116,9 @@ void GamePlayState::Render(SnakeGraphics* graphics) {
         world->Render(graphics);
     }
     
-    // Display score at top-left.
+    // Display score and level at the top-left.
     std::wstringstream ss;
-    ss << L"Score: " << score;
+    ss << L"Score: " << score << L"   Level: " << currentLevel;
     graphics->PlotText(1, 0, 2, backgroundColor, ss.str().c_str(), Color(255, 255, 255), SnakeGraphics::Left);
 }
 
