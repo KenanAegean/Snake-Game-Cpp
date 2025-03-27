@@ -55,7 +55,7 @@ void Snake::Update(float deltaTime)
         segments.pop_back();
     }
 
-    std::cout << "Snake moved. New head: (" << newHead.x << ", " << newHead.y << ")\n";
+    //std::cout << "Snake moved. New head: (" << newHead.x << ", " << newHead.y << ")\n";
 }
 
 void Snake::Render(SnakeGraphics* graphics)
@@ -110,7 +110,7 @@ void Snake::ChangeDirection(Direction newDir)
     }
     
     currentDirection = newDir;
-    std::cout << "Snake direction changed.\n";
+    //std::cout << "Snake direction changed.\n";
 }
 
 void Snake::Grow()

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <functional> // for std::function
 
+
 enum class Direction {
     Up,
     Down,

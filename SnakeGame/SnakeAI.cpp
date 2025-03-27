@@ -1,10 +1,11 @@
-﻿// SnakeAI.cpp
-#include "SnakeAI.h"
+﻿#include "SnakeAI.h"
 #include "World.h"
 #include "Wall.h"
+#include "Snake.h"
 #include <queue>
 #include <cmath>
 #include <algorithm>
+#include <deque>
 
 // Helper structure for A* nodes.
 struct Node {
@@ -37,27 +38,36 @@ static int WallPenalty(int x, int y, int gridColumns, int gridRows, World* world
         int ny = y + directions[i][1];
         if (nx >= 0 && ny >= 0 && nx < gridColumns && ny < gridRows) {
             if (world->IsWall(nx, ny))
-                penalty += 5; // adjust penalty value as needed
+                penalty += 5; // Adjust penalty value as needed.
         }
     }
     return penalty;
 }
 
-// Modified IsWalkable that accepts the goal cell.
-// If the cell is the goal, it returns true regardless of occupancy.
-static bool IsWalkable(int x, int y, int gridColumns, int gridRows, World* world, const Vec2& goal) {
+// Modified IsWalkable that accepts the goal cell and the AI snake.
+// It returns true if the cell is inside the grid, is either the goal,
+// is not occupied by any non-apple object, and is not part of aiSnake's body.
+static bool IsWalkable(int x, int y, int gridColumns, int gridRows, World* world, const Vec2& goal, Snake* aiSnake) {
     if (x < 0 || y < 0 || x >= gridColumns || y >= gridRows)
         return false;
     if (x == goal.x && y == goal.y)
         return true;
-    return !world->IsOccupied(x, y);
+    if (world->IsOccupied(x, y))
+        return false;
+    // Check if the cell is part of the AI snake's body (excluding the head).
+    const std::deque<Vec2>& segments = aiSnake->GetSegments();
+    for (size_t i = 1; i < segments.size(); i++) {
+        if (segments[i].x == x && segments[i].y == y)
+            return false;
+    }
+    return true;
 }
 
-std::vector<Vec2> SnakeAI::FindPath(const Vec2& start, const Vec2& goal, int gridColumns, int gridRows, World* world) {
+// Updated FindPath that now accepts the AI snake pointer.
+std::vector<Vec2> SnakeAI::FindPath(const Vec2& start, const Vec2& goal, int gridColumns, int gridRows, World* world, Snake* aiSnake) {
     std::vector<Vec2> path;
     std::priority_queue<Node, std::vector<Node>, NodeComparator> openList;
     std::vector<std::vector<bool>> closed(gridColumns, std::vector<bool>(gridRows, false));
-    // 2D vector to store parents.
     std::vector<std::vector<std::pair<int,int>>> parent(gridColumns, std::vector<std::pair<int,int>>(gridRows, {-1,-1}));
 
     int startH = Heuristic(start.x, start.y, goal.x, goal.y);
@@ -89,7 +99,7 @@ std::vector<Vec2> SnakeAI::FindPath(const Vec2& start, const Vec2& goal, int gri
         for (int i = 0; i < 4; i++) {
             int nx = current.x + directions[i][0];
             int ny = current.y + directions[i][1];
-            if (!IsWalkable(nx, ny, gridColumns, gridRows, world, goal) || closed[nx][ny])
+            if (!IsWalkable(nx, ny, gridColumns, gridRows, world, goal, aiSnake) || closed[nx][ny])
                 continue;
             int penalty = WallPenalty(nx, ny, gridColumns, gridRows, world);
             int newG = current.g + 1 + penalty;
@@ -105,7 +115,7 @@ Direction SnakeAI::GetDirection(const Vec2& start, const Vec2& next) {
     if (next.x < start.x) return Direction::Left;
     if (next.y > start.y) return Direction::Down;
     if (next.y < start.y) return Direction::Up;
-    return Direction::Right; // Default case
+    return Direction::Right; // Default case.
 }
 
 // Helper function to check if two directions are opposites.
@@ -119,20 +129,19 @@ static bool IsOpposite(Direction a, Direction b) {
 void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRows) {
     // Retrieve the apple's position.
     Vec2 applePos = world->GetApplePosition();
-    if (applePos.x == -1 && applePos.y == -1) {
-        // No active apple found.
+    if (applePos.x == -1 && applePos.y == -1)
         return;
-    }
+    
     Vec2 head = aiSnake->GetSegments().front();
-    std::vector<Vec2> path = FindPath(head, applePos, gridColumns, gridRows, world);
+    // Get the computed path, now passing the aiSnake pointer.
+    std::vector<Vec2> path = FindPath(head, applePos, gridColumns, gridRows, world, aiSnake);
     
     Direction currentDir = aiSnake->GetCurrentDirection();
     Direction chosenDir = currentDir; // Default: keep moving in current direction.
-
+    
     if (path.size() >= 2) {
-        // Compute the candidate direction from the computed path.
         chosenDir = GetDirection(head, path[1]);
-        // Prevent a U-turn.
+        // Avoid a U-turn.
         if (IsOpposite(chosenDir, currentDir)) {
             bool foundAlternative = false;
             for (size_t i = 2; i < path.size(); i++) {
@@ -147,8 +156,8 @@ void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRo
                 chosenDir = currentDir;
         }
     }
-
-    // Check if the next cell in chosenDir is safe.
+    
+    // Check if the next cell in chosenDir is safe (redundant safety check).
     Vec2 next = head;
     switch (chosenDir) {
         case Direction::Up:    next.y -= 1; break;
@@ -157,7 +166,7 @@ void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRo
         case Direction::Right: next.x += 1; break;
     }
     if (world->IsOccupied(next.x, next.y) || world->IsWall(next.x, next.y)) {
-        // If not safe, try fallback alternatives relative to current direction.
+        // Try fallback alternatives relative to current direction.
         Direction left, right;
         switch (currentDir) {
             case Direction::Up:    left = Direction::Left;  right = Direction::Right; break;
@@ -166,7 +175,6 @@ void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRo
             case Direction::Right: left = Direction::Up;    right = Direction::Down;  break;
         }
         Vec2 candidate = head;
-        // Try left.
         switch (left) {
             case Direction::Up:    candidate.y -= 1; break;
             case Direction::Down:  candidate.y += 1; break;
@@ -176,7 +184,6 @@ void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRo
         if (!world->IsOccupied(candidate.x, candidate.y) && !world->IsWall(candidate.x, candidate.y)) {
             chosenDir = left;
         } else {
-            // Try right.
             candidate = head;
             switch (right) {
                 case Direction::Up:    candidate.y -= 1; break;
@@ -187,7 +194,6 @@ void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRo
             if (!world->IsOccupied(candidate.x, candidate.y) && !world->IsWall(candidate.x, candidate.y)) {
                 chosenDir = right;
             } else {
-                // No safe alternative found; continue in current direction.
                 chosenDir = currentDir;
             }
         }

@@ -59,4 +59,6 @@ private:
 
     // Vector holding each player's info.
     std::vector<PlayerInfo> players;
+
+    void HandleAppleEaten(int playerIndex);
 };

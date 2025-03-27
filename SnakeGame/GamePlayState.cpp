@@ -17,7 +17,7 @@ GamePlayState::GamePlayState()
 {
     // Set default game mode (can be modified by the caller).
     settings.mode = PlayMode::OnePlayer;
-    settings.targetScore = 10;
+    settings.targetScore = 15;
 }
 
 GamePlayState::~GamePlayState() {}
@@ -41,20 +41,7 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
         case PlayMode::OnePlayer: {
             std::unique_ptr<Snake> snake1 = std::make_unique<Snake>(Vec2{ centerX, centerY });
             Snake* s1 = snake1.get();
-            s1->onAppleEaten = [this]() {
-                players[0].score++;
-                applesEatenThisLevel++;
-                if (applesEatenThisLevel >= 10) {
-                    std::string nextLevelFile = "level" + std::to_string(currentLevel + 1) + ".txt";
-                    std::ifstream file(nextLevelFile);
-                    if (file.good()) {
-                        currentLevel++;
-                        applesEatenThisLevel = 0;
-                        world->ClearWalls();
-                        world->LoadLevel(nextLevelFile);
-                    }
-                }
-            };
+            s1->onAppleEaten = [this]() { HandleAppleEaten(0); };
             players.push_back({ s1, 0, false });
             world->AddGameObject(std::move(snake1));
             break;
@@ -64,8 +51,8 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
             std::unique_ptr<Snake> snake2 = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
             Snake* s1 = snake1.get();
             Snake* s2 = snake2.get();
-            s1->onAppleEaten = [this]() { players[0].score++; };
-            s2->onAppleEaten = [this]() { players[1].score++; };
+            s1->onAppleEaten = [this]() { HandleAppleEaten(0); };
+            s2->onAppleEaten = [this]() { HandleAppleEaten(1); };
             players.push_back({ s1, 0, false });
             players.push_back({ s2, 0, false });
             world->AddGameObject(std::move(snake1));
@@ -77,8 +64,8 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
             std::unique_ptr<Snake> snake2 = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
             Snake* s1 = snake1.get();
             Snake* s2 = snake2.get();
-            s1->onAppleEaten = [this]() { players[0].score++; };
-            s2->onAppleEaten = [this]() { players[1].score++; };
+            s1->onAppleEaten = [this]() { HandleAppleEaten(0); };
+            s2->onAppleEaten = [this]() { HandleAppleEaten(1); };
             players.push_back({ s1, 0, false });
             players.push_back({ s2, 0, false });
             world->AddGameObject(std::move(snake1));
@@ -90,8 +77,8 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
             std::unique_ptr<Snake> aiSnake     = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
             Snake* s1 = playerSnake.get();
             Snake* s2 = aiSnake.get();
-            s1->onAppleEaten = [this]() { players[0].score++; };
-            s2->onAppleEaten = [this]() { players[1].score++; };
+            s1->onAppleEaten = [this]() { HandleAppleEaten(0); };
+            s2->onAppleEaten = [this]() { HandleAppleEaten(1); };
             players.push_back({ s1, 0, false });
             players.push_back({ s2, 0, true });
             world->AddGameObject(std::move(playerSnake));
@@ -103,8 +90,8 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
             std::unique_ptr<Snake> aiSnake     = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
             Snake* s1 = playerSnake.get();
             Snake* s2 = aiSnake.get();
-            s1->onAppleEaten = [this]() { players[0].score++; };
-            s2->onAppleEaten = [this]() { players[1].score++; };
+            s1->onAppleEaten = [this]() { HandleAppleEaten(0); };
+            s2->onAppleEaten = [this]() { HandleAppleEaten(1); };
             players.push_back({ s1, 0, false });
             players.push_back({ s2, 0, true });
             world->AddGameObject(std::move(playerSnake));
@@ -117,6 +104,24 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
     world->LoadLevel("level1.txt");
     world->SpawnApple(gridColumns, gridRows);
 }
+
+// New function: called whenever any snake eats an apple.
+void GamePlayState::HandleAppleEaten(int playerIndex) {
+    players[playerIndex].score++;
+    applesEatenThisLevel++;
+    // When enough apples have been eaten, load the next level.
+    if (applesEatenThisLevel >= 5) {
+        std::string nextLevelFile = "level" + std::to_string(currentLevel + 1) + ".txt";
+        std::ifstream file(nextLevelFile);
+        if (file.good()) {
+            currentLevel++;
+            applesEatenThisLevel = 0;
+            world->ClearWalls();
+            world->LoadLevel(nextLevelFile);
+        }
+    }
+}
+
 
 void GamePlayState::Update(float deltaTime) {
     if (world) {
@@ -203,6 +208,22 @@ void GamePlayState::Render(SnakeGraphics* graphics) {
         ss << L"Score: " << GetScore() << L"   Level: " << currentLevel;
     }
     graphics->PlotText(1, 0, 2, backgroundColor, ss.str().c_str(), Color(255, 255, 255), SnakeGraphics::Left);
+
+    // At the end of GamePlayState::Render, after drawing game objects:
+    //for (size_t i = 0; i < players.size(); i++) {
+    //    // Only visualize for AI-controlled snakes.
+    //    if (players[i].isAI && players[i].snake) {
+    //        Vec2 head = players[i].snake->GetSegments().front();
+    //        Vec2 applePos = world->GetApplePosition();
+    //        // Compute the AI path from the snake's head to the apple.
+    //        std::vector<Vec2> aiPath = SnakeAI::FindPath(head, applePos, gridColumns, gridRows, world.get(), players[i].snake);
+    //        // Draw a dot on each cell in the path.
+    //        for (const Vec2& cell : aiPath) {
+    //            // Plot a blue dot with order 3 so it appears above most tiles.
+    //            graphics->PlotTile(cell.x, cell.y, 3, Color(0, 0, 255), Color(0, 0, 255), L'.');
+    //        }
+    //    }
+    //}
 }
 
 void GamePlayState::KeyDown(int key) {

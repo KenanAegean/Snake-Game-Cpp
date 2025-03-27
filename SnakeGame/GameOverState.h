@@ -27,4 +27,5 @@ private:
     int finalLevel;
     std::vector<std::wstring> menuOptions;
     int selectedOption;
+    
 };
