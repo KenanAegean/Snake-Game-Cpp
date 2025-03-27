@@ -121,7 +121,8 @@ void GamePlayState::Update(float deltaTime) {
         world->Update(deltaTime);
     }
     
-    // Check collisions and out-of-bound/self collisions for each player's snake.
+    // Check collisions for each player's snake.
+    // (Now, in any mode, if a snake collides, we trigger game over.)
     for (auto& player : players) {
         if (player.snake) {
             Vec2 head = player.snake->GetSegments().front();
@@ -130,32 +131,24 @@ void GamePlayState::Update(float deltaTime) {
                 player.snake->HasSelfCollision() ||
                 player.snake->HasCollidedWithWall())
             {
-                // In competitive modes (OnePlayer, TwoPlayerVersus, PlayerVsAI), trigger game over immediately.
-                if (settings.mode == PlayMode::OnePlayer ||
-                    settings.mode == PlayMode::TwoPlayerVersus ||
-                    settings.mode == PlayMode::PlayerVsAI)
-                {
-                    if (!gameOverTriggered && onGameOver) {
-                        gameOverTriggered = true;
-                        onGameOver();
-                    }
-                    return;
+                if (!gameOverTriggered && onGameOver) {
+                    gameOverTriggered = true;
+                    onGameOver();
                 }
-                // In cooperative modes, you might choose to let the game continue.
+                return;
             }
         }
     }
     
     // --- Scoring and Game End Conditions ---
-    // Competitive: if any single player's score reaches the target.
     bool isCompetitive = (settings.mode == PlayMode::OnePlayer ||
                           settings.mode == PlayMode::TwoPlayerVersus ||
                           settings.mode == PlayMode::PlayerVsAI);
-    // Cooperative: combined score of all players.
-    bool isCooperative = (settings.mode == PlayMode::TwoPlayerCooperative ||
+    bool isCooperative   = (settings.mode == PlayMode::TwoPlayerCooperative ||
                           settings.mode == PlayMode::PlayerAndAI);
     
     if (isCompetitive) {
+        // For competitive modes, if any player's score reaches the target, trigger game over.
         for (auto& player : players) {
             if (player.score >= settings.targetScore) {
                 if (!gameOverTriggered && onGameOver) {
@@ -166,6 +159,7 @@ void GamePlayState::Update(float deltaTime) {
             }
         }
     } else if (isCooperative) {
+        // For cooperative modes, trigger game over when the combined score reaches the target.
         int totalScore = 0;
         for (auto& player : players) {
             totalScore += player.score;
