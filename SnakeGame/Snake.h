@@ -48,6 +48,8 @@ public:
 
     bool HasCollidedWithWall() const { return hasCollidedWithWall; }
 
+    Direction GetCurrentDirection() const { return currentDirection; }
+
 private:
     std::deque<Vec2> segments;  // Front element is the head
     Direction currentDirection;

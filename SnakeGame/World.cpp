@@ -143,3 +143,39 @@ void World::ClearWalls() {
             }),
         gameObjects.end());
 }
+
+Vec2 World::GetApplePosition() const {
+    for (const auto& obj : gameObjects) {
+        Apple* apple = dynamic_cast<Apple*>(obj.get());
+        if (apple && apple->IsActive()) {
+            return apple->position;
+        }
+    }
+    return Vec2{-1, -1}; // No active apple found.
+}
+
+bool World::IsOccupied(int x, int y) const {
+    for (const auto& obj : gameObjects) {
+        if (obj->position.x == x && obj->position.y == y) {
+            // If the object is an apple, ignore it as an obstacle.
+            if (dynamic_cast<Apple*>(obj.get()) != nullptr) {
+                continue;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool World::IsWall(int x, int y) const {
+    for (const auto& obj : gameObjects) {
+        // Check if the object is a wall.
+        if (obj->position.x == x && obj->position.y == y) {
+            if (dynamic_cast<Wall*>(obj.get()) != nullptr)
+                return true;
+        }
+    }
+    return false;
+}
+

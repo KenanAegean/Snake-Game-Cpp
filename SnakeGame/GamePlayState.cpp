@@ -8,6 +8,8 @@
 #include <sstream>
 #include <fstream>
 
+#include "SnakeAI.h"
+
 GamePlayState::GamePlayState()
     : world(nullptr), gridColumns(0), gridRows(0),
       currentLevel(1), applesEatenThisLevel(0),
@@ -124,6 +126,9 @@ void GamePlayState::Update(float deltaTime) {
     // Check collisions for each player's snake.
     // (Now, in any mode, if a snake collides, we trigger game over.)
     for (auto& player : players) {
+        if (player.isAI && player.snake) {
+            SnakeAI::UpdateAI(player.snake, world.get(), gridColumns, gridRows);
+        }
         if (player.snake) {
             Vec2 head = player.snake->GetSegments().front();
             if (head.x < 0 || head.x >= gridColumns ||

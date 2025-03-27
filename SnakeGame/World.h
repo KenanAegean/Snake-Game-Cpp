@@ -29,6 +29,11 @@ public:
 
     void ClearWalls();
 
+    Vec2 GetApplePosition() const;
+    bool IsOccupied(int x, int y) const;
+    bool IsWall(int x, int y) const;
+
+
 private:
     std::vector<std::unique_ptr<GameObject>> gameObjects;
 };
