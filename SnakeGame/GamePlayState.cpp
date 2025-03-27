@@ -9,98 +9,176 @@
 #include <fstream>
 
 GamePlayState::GamePlayState()
-    : snake(nullptr), gridColumns(0), gridRows(0),
-      score(0), currentLevel(1), applesEatenThisLevel(0),
+    : world(nullptr), gridColumns(0), gridRows(0),
+      currentLevel(1), applesEatenThisLevel(0),
       gameOverTriggered(false)
-{}
+{
+    // Set default game mode (can be modified by the caller).
+    settings.mode = PlayMode::OnePlayer;
+    settings.targetScore = 10;
+}
 
 GamePlayState::~GamePlayState() {}
 
 void GamePlayState::Init(SnakeGraphics* graphics) {
-    // Create the world.
+    // Create the game world.
     world = std::make_unique<World>();
 
-    // Store grid dimensions.
+    // Get grid dimensions.
     gridColumns = graphics->GetNumColumns();
     gridRows    = graphics->GetNumRows();
+
+    // Clear any previous players.
+    players.clear();
+
     int centerX = gridColumns / 2;
     int centerY = gridRows / 2;
 
-    // Create a new snake at the center.
-    std::unique_ptr<Snake> newSnake = std::make_unique<Snake>(Vec2{ centerX, centerY });
-    snake = newSnake.get();
-
-    // When the snake eats an apple, increment the score and the level-specific counter.
-    snake->onAppleEaten = [this]() {
-        score++;
-        applesEatenThisLevel++;
-        std::cout << "Score increased to " << score << "\n";
-        // Check if 10 apples have been eaten in the current level.
-        if (applesEatenThisLevel >= 10) {
-            // Build the next level file name, e.g. "level2.txt"
-            std::string nextLevelFile = std::string("level") + std::to_string(currentLevel + 1) + ".txt";
-            std::ifstream file(nextLevelFile);
-            if (file.good()) {
-                currentLevel++;
-                applesEatenThisLevel = 0;  // Reset counter for the new level.
-                std::cout << "Loading next level: " << nextLevelFile << "\n";
-                // Clear current walls and load the new level.
-                world->ClearWalls();
-                world->LoadLevel(nextLevelFile);
-            } else {
-                std::cout << "Next level file not found: " << nextLevelFile << "\n";
-            }
+    // Create snake objects based on the selected game mode.
+    switch(settings.mode) {
+        case PlayMode::OnePlayer: {
+            std::unique_ptr<Snake> snake1 = std::make_unique<Snake>(Vec2{ centerX, centerY });
+            Snake* s1 = snake1.get();
+            s1->onAppleEaten = [this]() {
+                players[0].score++;
+                applesEatenThisLevel++;
+                if (applesEatenThisLevel >= 10) {
+                    std::string nextLevelFile = "level" + std::to_string(currentLevel + 1) + ".txt";
+                    std::ifstream file(nextLevelFile);
+                    if (file.good()) {
+                        currentLevel++;
+                        applesEatenThisLevel = 0;
+                        world->ClearWalls();
+                        world->LoadLevel(nextLevelFile);
+                    }
+                }
+            };
+            players.push_back({ s1, 0, false });
+            world->AddGameObject(std::move(snake1));
+            break;
         }
-    };
+        case PlayMode::TwoPlayerVersus: {
+            std::unique_ptr<Snake> snake1 = std::make_unique<Snake>(Vec2{ centerX - 3, centerY });
+            std::unique_ptr<Snake> snake2 = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
+            Snake* s1 = snake1.get();
+            Snake* s2 = snake2.get();
+            s1->onAppleEaten = [this]() { players[0].score++; };
+            s2->onAppleEaten = [this]() { players[1].score++; };
+            players.push_back({ s1, 0, false });
+            players.push_back({ s2, 0, false });
+            world->AddGameObject(std::move(snake1));
+            world->AddGameObject(std::move(snake2));
+            break;
+        }
+        case PlayMode::TwoPlayerCooperative: {
+            std::unique_ptr<Snake> snake1 = std::make_unique<Snake>(Vec2{ centerX - 3, centerY });
+            std::unique_ptr<Snake> snake2 = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
+            Snake* s1 = snake1.get();
+            Snake* s2 = snake2.get();
+            s1->onAppleEaten = [this]() { players[0].score++; };
+            s2->onAppleEaten = [this]() { players[1].score++; };
+            players.push_back({ s1, 0, false });
+            players.push_back({ s2, 0, false });
+            world->AddGameObject(std::move(snake1));
+            world->AddGameObject(std::move(snake2));
+            break;
+        }
+        case PlayMode::PlayerVsAI: {
+            std::unique_ptr<Snake> playerSnake = std::make_unique<Snake>(Vec2{ centerX - 3, centerY });
+            std::unique_ptr<Snake> aiSnake     = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
+            Snake* s1 = playerSnake.get();
+            Snake* s2 = aiSnake.get();
+            s1->onAppleEaten = [this]() { players[0].score++; };
+            s2->onAppleEaten = [this]() { players[1].score++; };
+            players.push_back({ s1, 0, false });
+            players.push_back({ s2, 0, true });
+            world->AddGameObject(std::move(playerSnake));
+            world->AddGameObject(std::move(aiSnake));
+            break;
+        }
+        case PlayMode::PlayerAndAI: {
+            std::unique_ptr<Snake> playerSnake = std::make_unique<Snake>(Vec2{ centerX - 3, centerY });
+            std::unique_ptr<Snake> aiSnake     = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
+            Snake* s1 = playerSnake.get();
+            Snake* s2 = aiSnake.get();
+            s1->onAppleEaten = [this]() { players[0].score++; };
+            s2->onAppleEaten = [this]() { players[1].score++; };
+            players.push_back({ s1, 0, false });
+            players.push_back({ s2, 0, true });
+            world->AddGameObject(std::move(playerSnake));
+            world->AddGameObject(std::move(aiSnake));
+            break;
+        }
+    }
 
-    // For wall collision, let the snake mark itself or set a dedicated flag.
-    snake->onGameOver = [this]() {
-        std::cout << "Game Over triggered: Collision detected.\n";
-        // Do not call onGameOver here; we let GamePlayState::Update handle the transition.
-    };
-
-    // Add the snake to the world.
-    world->AddGameObject(std::move(newSnake));
-
-    // Load walls from the initial level.
+    // Load the initial level and spawn an apple.
     world->LoadLevel("level1.txt");
-
-    // Spawn an initial apple.
     world->SpawnApple(gridColumns, gridRows);
 }
-
 
 void GamePlayState::Update(float deltaTime) {
     if (world) {
         world->Update(deltaTime);
     }
     
-    if (!gameOverTriggered && snake) {
-        // Check if the snake collided with a wall.
-        if (snake->HasCollidedWithWall()) {
-            gameOverTriggered = true;
-            std::cout << "Game Over triggered: Collision with wall (flag detected).\n";
-            if (onGameOver) {
-                onGameOver();
-            }
-        }
-        else {
-            // Otherwise, check for out-of-bounds or self-collision.
-            Vec2 head = snake->GetSegments().front();
+    // Check collisions and out-of-bound/self collisions for each player's snake.
+    for (auto& player : players) {
+        if (player.snake) {
+            Vec2 head = player.snake->GetSegments().front();
             if (head.x < 0 || head.x >= gridColumns ||
                 head.y < 0 || head.y >= gridRows ||
-                snake->HasSelfCollision()) {
-                gameOverTriggered = true;
-                std::cout << "Game Over triggered: Collision detected.\n";
-                if (onGameOver) {
+                player.snake->HasSelfCollision() ||
+                player.snake->HasCollidedWithWall())
+            {
+                // In competitive modes (OnePlayer, TwoPlayerVersus, PlayerVsAI), trigger game over immediately.
+                if (settings.mode == PlayMode::OnePlayer ||
+                    settings.mode == PlayMode::TwoPlayerVersus ||
+                    settings.mode == PlayMode::PlayerVsAI)
+                {
+                    if (!gameOverTriggered && onGameOver) {
+                        gameOverTriggered = true;
+                        onGameOver();
+                    }
+                    return;
+                }
+                // In cooperative modes, you might choose to let the game continue.
+            }
+        }
+    }
+    
+    // --- Scoring and Game End Conditions ---
+    // Competitive: if any single player's score reaches the target.
+    bool isCompetitive = (settings.mode == PlayMode::OnePlayer ||
+                          settings.mode == PlayMode::TwoPlayerVersus ||
+                          settings.mode == PlayMode::PlayerVsAI);
+    // Cooperative: combined score of all players.
+    bool isCooperative = (settings.mode == PlayMode::TwoPlayerCooperative ||
+                          settings.mode == PlayMode::PlayerAndAI);
+    
+    if (isCompetitive) {
+        for (auto& player : players) {
+            if (player.score >= settings.targetScore) {
+                if (!gameOverTriggered && onGameOver) {
+                    gameOverTriggered = true;
                     onGameOver();
                 }
-                }
+                return;
+            }
+        }
+    } else if (isCooperative) {
+        int totalScore = 0;
+        for (auto& player : players) {
+            totalScore += player.score;
+        }
+        if (totalScore >= settings.targetScore) {
+            if (!gameOverTriggered && onGameOver) {
+                gameOverTriggered = true;
+                onGameOver();
+            }
+            return;
         }
     }
 }
-
-
 
 void GamePlayState::Render(SnakeGraphics* graphics) {
     Color backgroundColor(0, 0, 0);
@@ -111,31 +189,46 @@ void GamePlayState::Render(SnakeGraphics* graphics) {
         }
     }
     
-    // Render game objects (snake, walls, apples).
+    // Render game objects (snakes, walls, apples).
     if (world) {
         world->Render(graphics);
     }
     
-    // Display score and level text.
+    // Display score and level information.
     std::wstringstream ss;
-    ss << L"Score: " << score << L"   Level: " << currentLevel;
+    // For competitive modes, display separate scores for Player 1 and Player 2.
+    if (settings.mode == PlayMode::TwoPlayerVersus || settings.mode == PlayMode::PlayerVsAI) {
+        ss << L"P1: " << players[0].score << L"   P2: " << players[1].score 
+           << L"   Level: " << currentLevel;
+    } else {
+        ss << L"Score: " << GetScore() << L"   Level: " << currentLevel;
+    }
     graphics->PlotText(1, 0, 2, backgroundColor, ss.str().c_str(), Color(255, 255, 255), SnakeGraphics::Left);
 }
 
 void GamePlayState::KeyDown(int key) {
-    if (!snake) {
-        return;
+    // Player 1: Arrow keys.
+    if (!players.empty() && players[0].snake) {
+        switch (key) {
+            case VK_UP:    players[0].snake->ChangeDirection(Direction::Up); break;
+            case VK_DOWN:  players[0].snake->ChangeDirection(Direction::Down); break;
+            case VK_LEFT:  players[0].snake->ChangeDirection(Direction::Left); break;
+            case VK_RIGHT: players[0].snake->ChangeDirection(Direction::Right); break;
+        }
     }
-    switch (key) {
-    case VK_LEFT:  snake->ChangeDirection(Direction::Left);  break;
-    case VK_RIGHT: snake->ChangeDirection(Direction::Right); break;
-    case VK_UP:    snake->ChangeDirection(Direction::Up);    break;
-    case VK_DOWN:  snake->ChangeDirection(Direction::Down);  break;
-    default: break;
+    
+    // Player 2: WASD keys (if present and not AI).
+    if (players.size() >= 2 && !players[1].isAI && players[1].snake) {
+        switch (key) {
+            case 'W':  players[1].snake->ChangeDirection(Direction::Up); break;
+            case 'S':  players[1].snake->ChangeDirection(Direction::Down); break;
+            case 'A':  players[1].snake->ChangeDirection(Direction::Left); break;
+            case 'D':  players[1].snake->ChangeDirection(Direction::Right); break;
+        }
     }
 }
 
 void GamePlayState::CleanUp() {
     world.reset();
-    snake = nullptr;
+    players.clear();
 }

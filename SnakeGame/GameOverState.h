@@ -6,8 +6,8 @@
 
 class GameOverState : public GameState {
 public:
-    // Modified constructor to accept final score and level.
-    GameOverState(const std::string& message, int score, int level);
+    // Modified constructor to accept a winner message.
+    GameOverState(const std::wstring& message, const std::wstring& winnerMessage, int score, int level);
     virtual ~GameOverState();
 
     void Init(SnakeGraphics* graphics) override;
@@ -21,7 +21,8 @@ public:
     std::function<void()> onMainMenu;
 
 private:
-    std::string gameOverMessage;
+    std::wstring gameOverMessage;
+    std::wstring winnerMessage;
     int finalScore;
     int finalLevel;
     std::vector<std::wstring> menuOptions;

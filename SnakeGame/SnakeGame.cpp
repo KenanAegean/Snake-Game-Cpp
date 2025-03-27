@@ -8,6 +8,7 @@
 #include "MainMenuState.h"
 #include "GamePlayState.h"
 #include "GameOverState.h"
+#include "GameMode.h"
 
 const int SCREEN_WIDTH  = 800;
 const int SCREEN_HEIGHT = 600;
@@ -31,22 +32,45 @@ int main() {
     // Create the state machine.
     StateMachine stateMachine;
     
-    // Define a persistent lambda for starting a new game.
-    std::function<void()> startGame = [&]() {
+    // Declare the startGame lambda as a std::function to allow recursive use.
+    std::function<void(PlayMode)> startGame;
+    
+    startGame = [&](PlayMode mode) {
         auto gameplayState = std::make_unique<GamePlayState>();
-        // Set up the onGameOver callback for gameplayState.
+        gameplayState->settings.mode = mode;
+        gameplayState->settings.targetScore = 10;
+    
+        // Set up onGameOver callback.
         gameplayState->onGameOver = [&, gp = gameplayState.get()]() {
-            int finalScore = gp->GetScore();
             int finalLevel = gp->GetLevel();
-            auto gameOverState = std::make_unique<GameOverState>("Game Over!", finalScore, finalLevel);
-            // When Replay is pressed, call startGame to create a fresh game state.
-            gameOverState->onReplay = startGame;
-            // When Main Menu is pressed, create a new MainMenuState with onStartGame = startGame.
+            int finalScore = gp->GetScore();
+            std::wstring winnerMsg = L"";
+            // For competitive modes, determine which player wins.
+            if (gp->settings.mode == PlayMode::TwoPlayerVersus ||
+                gp->settings.mode == PlayMode::PlayerVsAI)
+            {
+                const auto& players = gp->GetPlayers();
+                if (players[0].score > players[1].score) {
+                    winnerMsg = L"Player 1 wins!";
+                } else if (players[0].score < players[1].score) {
+                    winnerMsg = L"Player 2 wins!";
+                } else {
+                    winnerMsg = L"It's a tie!";
+                }
+            }
+            auto gameOverState = std::make_unique<GameOverState>(L"Game Over!", winnerMsg, finalScore, finalLevel);
+            // Replay: restart game with same mode.
+            gameOverState->onReplay = [&, mode]() {
+                auto newGameplayState = std::make_unique<GamePlayState>();
+                newGameplayState->settings.mode = mode;
+                newGameplayState->settings.targetScore = 10;
+                stateMachine.ChangeState(std::move(newGameplayState), &graphics);
+            };
+            // Main Menu: return to main menu.
             gameOverState->onMainMenu = [&]() {
                 auto newMainMenuState = std::make_unique<MainMenuState>();
-                // Set the flag so that MainMenuState clears the screen in its Render.
                 newMainMenuState->SetIsMainMenuReturned(true);
-                newMainMenuState->onStartGame = startGame; // assuming startGame is your persistent lambda.
+                newMainMenuState->onStartGame = startGame;
                 stateMachine.ChangeState(std::move(newMainMenuState), &graphics);
             };
             stateMachine.ChangeState(std::move(gameOverState), &graphics);
@@ -54,8 +78,9 @@ int main() {
         stateMachine.ChangeState(std::move(gameplayState), &graphics);
     };
 
-    // Create the initial Main Menu state and assign startGame to its onStartGame callback.
+    // Create the initial Main Menu state.
     auto mainMenuState = std::make_unique<MainMenuState>();
+    // Set the onStartGame callback to our startGame lambda.
     mainMenuState->onStartGame = startGame;
     stateMachine.ChangeState(std::move(mainMenuState), &graphics);
     
