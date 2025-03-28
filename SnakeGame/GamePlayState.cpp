@@ -8,6 +8,7 @@
 #include <sstream>
 #include <fstream>
 
+#include "Apple.h"
 #include "SnakeAI.h"
 
 GamePlayState::GamePlayState()
@@ -98,6 +99,7 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
             world->AddGameObject(std::move(aiSnake));
             break;
         }
+
     }
 
     // Load the initial level and spawn an apple.
@@ -251,4 +253,5 @@ void GamePlayState::KeyDown(int key) {
 void GamePlayState::CleanUp() {
     world.reset();
     players.clear();
+    Apple::ResetFirstAppleFlag();
 }

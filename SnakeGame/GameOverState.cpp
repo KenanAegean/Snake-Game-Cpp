@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "Apple.h"
+
 GameOverState::GameOverState(const std::wstring& message, const std::wstring& winnerMsg, int score, int level)
     : gameOverMessage(message), winnerMessage(winnerMsg), finalScore(score), finalLevel(level), selectedOption(0)
 {
@@ -73,5 +75,5 @@ void GameOverState::KeyDown(int key) {
 }
 
 void GameOverState::CleanUp() {
-    // Clean up resources if needed.
+    Apple::ResetFirstAppleFlag();
 }

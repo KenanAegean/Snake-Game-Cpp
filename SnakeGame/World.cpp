@@ -73,21 +73,17 @@ void World::SpawnApple(int maxColumns, int maxRows) {
     int x = 0, y = 0;
     
     do {
-        // Generate biased value for x
         double rand1 = static_cast<double>(rand()) / RAND_MAX;
         double rand2 = static_cast<double>(rand()) / RAND_MAX;
         x = static_cast<int>(((rand1 + rand2) / 2.0) * maxColumns);
-        
-        // Generate biased value for y
+
         rand1 = static_cast<double>(rand()) / RAND_MAX;
         rand2 = static_cast<double>(rand()) / RAND_MAX;
         y = static_cast<int>(((rand1 + rand2) / 2.0) * maxRows);
-        
+
         validPosition = true;
-        
-        // Check all game objects to see if the position is already occupied.
+
         for (const auto& obj : gameObjects) {
-            // If the object is a Snake, check all of its segments.
             if (Snake* snake = dynamic_cast<Snake*>(obj.get())) {
                 for (const auto& segment : snake->GetSegments()) {
                     if (segment.x == x && segment.y == y) {
@@ -96,7 +92,6 @@ void World::SpawnApple(int maxColumns, int maxRows) {
                     }
                 }
             }
-            // Also check if the object is a Wall.
             if (Wall* wall = dynamic_cast<Wall*>(obj.get())) {
                 if (wall->position.x == x && wall->position.y == y) {
                     validPosition = false;
@@ -107,10 +102,19 @@ void World::SpawnApple(int maxColumns, int maxRows) {
         }
         attempts++;
     } while (!validPosition && attempts < maxAttempts);
-    
-    // Spawn the apple even if a valid spot isn't found after many attempts.
-    AddGameObject(std::make_unique<Apple>(Vec2{ x, y }));
+
+    auto apple = std::make_unique<Apple>(Vec2{x, y});
+
+    // Check immediately if apple is active. If not, it's the first apple.
+    if (!apple->IsActive()) {
+        // Immediately discard this apple and spawn a new one.
+        SpawnApple(maxColumns, maxRows);
+        return;
+    }
+
+    AddGameObject(std::move(apple));
 }
+
 
 
 
@@ -142,6 +146,9 @@ void World::ClearWalls() {
                 return dynamic_cast<Wall*>(obj.get()) != nullptr;
             }),
         gameObjects.end());
+    
+    // Reset the first apple flag if world is cleared
+    Apple::ResetFirstAppleFlag();
 }
 
 Vec2 World::GetApplePosition() const {

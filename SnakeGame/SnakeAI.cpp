@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <deque>
 
+#include "Apple.h"
+
 // Helper structure for A* nodes.
 struct Node {
     int x, y;
@@ -38,11 +40,12 @@ static int WallPenalty(int x, int y, int gridColumns, int gridRows, World* world
         int ny = y + directions[i][1];
         if (nx >= 0 && ny >= 0 && nx < gridColumns && ny < gridRows) {
             if (world->IsWall(nx, ny))
-                penalty += 5; // Adjust penalty value as needed.
+                penalty += 50; // increased penalty value
         }
     }
     return penalty;
 }
+
 
 // Modified IsWalkable that accepts the goal cell and the AI snake.
 // It returns true if the cell is inside the grid, is either the goal,
@@ -50,11 +53,16 @@ static int WallPenalty(int x, int y, int gridColumns, int gridRows, World* world
 static bool IsWalkable(int x, int y, int gridColumns, int gridRows, World* world, const Vec2& goal, Snake* aiSnake) {
     if (x < 0 || y < 0 || x >= gridColumns || y >= gridRows)
         return false;
+    // Always allow the goal cell (even if it might normally be occupied)
     if (x == goal.x && y == goal.y)
         return true;
+    // Explicitly reject wall cells.
+    if (world->IsWall(x, y))
+        return false;
+    // Also reject cells that are occupied by other objects.
     if (world->IsOccupied(x, y))
         return false;
-    // Check if the cell is part of the AI snake's body (excluding the head).
+    // Prevent the AI from planning a route through its own body (except the head)
     const std::deque<Vec2>& segments = aiSnake->GetSegments();
     for (size_t i = 1; i < segments.size(); i++) {
         if (segments[i].x == x && segments[i].y == y)
@@ -127,21 +135,26 @@ static bool IsOpposite(Direction a, Direction b) {
 }
 
 void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRows) {
+    // Skip AI target until the second apple is created
+    if (!Apple::isFirstAppleCreated) {
+        return; // AI should wait before targeting
+    }
+
     // Retrieve the apple's position.
     Vec2 applePos = world->GetApplePosition();
     if (applePos.x == -1 && applePos.y == -1)
         return;
     
     Vec2 head = aiSnake->GetSegments().front();
-    // Get the computed path, now passing the aiSnake pointer.
+    // Compute the path using A* (which avoids walls, snake's own body, etc.)
     std::vector<Vec2> path = FindPath(head, applePos, gridColumns, gridRows, world, aiSnake);
     
     Direction currentDir = aiSnake->GetCurrentDirection();
-    Direction chosenDir = currentDir; // Default: keep moving in current direction.
+    Direction chosenDir = currentDir; // default to current direction
     
     if (path.size() >= 2) {
         chosenDir = GetDirection(head, path[1]);
-        // Avoid a U-turn.
+        // If the candidate move is a U-turn relative to the current direction, look further into the path.
         if (IsOpposite(chosenDir, currentDir)) {
             bool foundAlternative = false;
             for (size_t i = 2; i < path.size(); i++) {
@@ -157,7 +170,7 @@ void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRo
         }
     }
     
-    // Check if the next cell in chosenDir is safe (redundant safety check).
+    // Check if the next cell in the chosen direction is safe.
     Vec2 next = head;
     switch (chosenDir) {
         case Direction::Up:    next.y -= 1; break;
@@ -165,38 +178,47 @@ void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRo
         case Direction::Left:  next.x -= 1; break;
         case Direction::Right: next.x += 1; break;
     }
+    
     if (world->IsOccupied(next.x, next.y) || world->IsWall(next.x, next.y)) {
-        // Try fallback alternatives relative to current direction.
-        Direction left, right;
-        switch (currentDir) {
-            case Direction::Up:    left = Direction::Left;  right = Direction::Right; break;
-            case Direction::Down:  left = Direction::Right; right = Direction::Left;  break;
-            case Direction::Left:  left = Direction::Down;  right = Direction::Up;    break;
-            case Direction::Right: left = Direction::Up;    right = Direction::Down;  break;
+        // Fallback: Evaluate all candidate directions (except the one that's a U-turn)
+        std::vector<Direction> safeDirections;
+        Direction directions[4] = { Direction::Up, Direction::Down, Direction::Left, Direction::Right };
+        for (Direction d : directions) {
+            if (IsOpposite(d, currentDir))
+                continue;
+            Vec2 cand = head;
+            switch (d) {
+                case Direction::Up:    cand.y -= 1; break;
+                case Direction::Down:  cand.y += 1; break;
+                case Direction::Left:  cand.x -= 1; break;
+                case Direction::Right: cand.x += 1; break;
+            }
+            if (!(world->IsOccupied(cand.x, cand.y) || world->IsWall(cand.x, cand.y)))
+                safeDirections.push_back(d);
         }
-        Vec2 candidate = head;
-        switch (left) {
-            case Direction::Up:    candidate.y -= 1; break;
-            case Direction::Down:  candidate.y += 1; break;
-            case Direction::Left:  candidate.x -= 1; break;
-            case Direction::Right: candidate.x += 1; break;
-        }
-        if (!world->IsOccupied(candidate.x, candidate.y) && !world->IsWall(candidate.x, candidate.y)) {
-            chosenDir = left;
+        if (!safeDirections.empty()) {
+            // Choose the safe move that minimizes the Manhattan distance to the apple.
+            Direction bestDir = safeDirections[0];
+            int bestDist = INT_MAX;
+            for (Direction d : safeDirections) {
+                Vec2 cand = head;
+                switch (d) {
+                    case Direction::Up:    cand.y -= 1; break;
+                    case Direction::Down:  cand.y += 1; break;
+                    case Direction::Left:  cand.x -= 1; break;
+                    case Direction::Right: cand.x += 1; break;
+                }
+                int dist = std::abs(cand.x - applePos.x) + std::abs(cand.y - applePos.y);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestDir = d;
+                }
+            }
+            chosenDir = bestDir;
         } else {
-            candidate = head;
-            switch (right) {
-                case Direction::Up:    candidate.y -= 1; break;
-                case Direction::Down:  candidate.y += 1; break;
-                case Direction::Left:  candidate.x -= 1; break;
-                case Direction::Right: candidate.x += 1; break;
-            }
-            if (!world->IsOccupied(candidate.x, candidate.y) && !world->IsWall(candidate.x, candidate.y)) {
-                chosenDir = right;
-            } else {
-                chosenDir = currentDir;
-            }
+            chosenDir = currentDir;
         }
     }
+    
     aiSnake->ChangeDirection(chosenDir);
 }

@@ -2,6 +2,8 @@
 #include <chrono>
 #include <thread>
 #include <functional>
+
+#include "Apple.h"
 #include "SnakeGraphics.h"
 #include "SnakeInput.h"
 #include "StateMachine.h"
@@ -32,23 +34,23 @@ int main() {
     // Create the state machine.
     StateMachine stateMachine;
     
-    // Declare the startGame lambda as a std::function to allow recursive use.
+    // Central "start game" lambda that creates a new GamePlayState,
+    // sets its mode, target score, and all its callbacks.
     std::function<void(PlayMode)> startGame;
-    
     startGame = [&](PlayMode mode) {
         auto gameplayState = std::make_unique<GamePlayState>();
         gameplayState->settings.mode = mode;
-        gameplayState->settings.targetScore = 10;
-    
-        // Set up onGameOver callback.
+        gameplayState->settings.targetScore = 15;
+        Apple::ResetFirstAppleFlag();
+        
+        // Set the onGameOver callback so that when a collision is detected,
+        // we transition to the Game Over state.
         gameplayState->onGameOver = [&, gp = gameplayState.get()]() {
             int finalLevel = gp->GetLevel();
             int finalScore = gp->GetScore();
             std::wstring winnerMsg = L"";
-            // For competitive modes, determine which player wins.
-            if (gp->settings.mode == PlayMode::TwoPlayerVersus ||
-                gp->settings.mode == PlayMode::PlayerVsAI)
-            {
+            // For competitive modes, determine a winner.
+            if (mode == PlayMode::TwoPlayerVersus || mode == PlayMode::PlayerVsAI) {
                 const auto& players = gp->GetPlayers();
                 if (players[0].score > players[1].score) {
                     winnerMsg = L"Player 1 wins!";
@@ -59,14 +61,12 @@ int main() {
                 }
             }
             auto gameOverState = std::make_unique<GameOverState>(L"Game Over!", winnerMsg, finalScore, finalLevel);
-            // Replay: restart game with same mode.
+            // When Replay is selected, call startGame again.
             gameOverState->onReplay = [&, mode]() {
-                auto newGameplayState = std::make_unique<GamePlayState>();
-                newGameplayState->settings.mode = mode;
-                newGameplayState->settings.targetScore = 10;
-                stateMachine.ChangeState(std::move(newGameplayState), &graphics);
+                Apple::ResetFirstAppleFlag();
+                startGame(mode);
             };
-            // Main Menu: return to main menu.
+            // When Main Menu is selected, return to the main menu.
             gameOverState->onMainMenu = [&]() {
                 auto newMainMenuState = std::make_unique<MainMenuState>();
                 newMainMenuState->SetIsMainMenuReturned(true);
@@ -75,12 +75,12 @@ int main() {
             };
             stateMachine.ChangeState(std::move(gameOverState), &graphics);
         };
+        
         stateMachine.ChangeState(std::move(gameplayState), &graphics);
     };
-
+    
     // Create the initial Main Menu state.
     auto mainMenuState = std::make_unique<MainMenuState>();
-    // Set the onStartGame callback to our startGame lambda.
     mainMenuState->onStartGame = startGame;
     stateMachine.ChangeState(std::move(mainMenuState), &graphics);
     

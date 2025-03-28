@@ -2,6 +2,8 @@
 #include "SnakeGraphics.h"
 #include <windows.h>
 
+#include "Apple.h"
+
 MainMenuState::MainMenuState() : selectedOption(0), isMainMenuReturned(false) {
     // Set up menu options: five game modes and an Exit option.
     menuOptions.push_back(L"One Player");
@@ -55,6 +57,7 @@ void MainMenuState::KeyDown(int key) {
             PostQuitMessage(0);
         } else {
             if (onStartGame) {
+                Apple::ResetFirstAppleFlag();
                 onStartGame(GetSelectedMode());
             }
         }

@@ -1,26 +1,35 @@
 ﻿#include "Apple.h"
 #include "SnakeGraphics.h"
-#include "Snake.h" // For dynamic_cast
+#include "Snake.h"
+
+bool Apple::isFirstAppleCreated = false;
 
 Apple::Apple(const Vec2& pos)
-    : GameObject(pos), active(true) {}
+    : GameObject(pos), active(true) {
+    if (!isFirstAppleCreated) {
+        Deactivate();
+        isFirstAppleCreated = true;
+    }
+}
 
 Apple::~Apple() {}
 
-void Apple::Update(float deltaTime) {
-    // Apple doesn't require per-frame updates.
-}
+void Apple::Update(float deltaTime) {}
 
 void Apple::Render(SnakeGraphics* graphics) {
-    Color appleColor(255, 0, 0); // Red apple.
-    // Draw the apple with order 1 to appear over the background.
+    if (!active) return;
+    Color appleColor(255, 0, 0);
     graphics->PlotTile(position.x, position.y, 1, appleColor, appleColor, L'@');
 }
 
 void Apple::OnCollision(GameObject* other) {
-    // If the snake collides with the apple, deactivate the apple.
     Snake* snake = dynamic_cast<Snake*>(other);
     if (snake) {
         Deactivate();
     }
+}
+
+// New method implementation
+void Apple::ResetFirstAppleFlag() {
+    isFirstAppleCreated = false;
 }
