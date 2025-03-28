@@ -15,14 +15,11 @@ public:
     void Render(SnakeGraphics* graphics) override;
     void KeyDown(int key) override;
     void CleanUp() override;
-
-    // Callback to start game, passing the selected mode.
+    
     std::function<void(PlayMode)> onStartGame;
-
-    // Setter for the clear screen flag.
+    
     void SetIsMainMenuReturned(bool value) { isMainMenuReturned = value; }
-
-    // Returns the selected game mode based on the menu index.
+    
     PlayMode GetSelectedMode() const;
 
 private:

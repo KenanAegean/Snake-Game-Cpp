@@ -6,7 +6,6 @@
 
 class GameOverState : public GameState {
 public:
-    // Modified constructor to accept a winner message.
     GameOverState(const std::wstring& message, const std::wstring& winnerMessage, int score, int level);
     virtual ~GameOverState();
 
@@ -15,8 +14,7 @@ public:
     void Render(SnakeGraphics* graphics) override;
     void KeyDown(int key) override;
     void CleanUp() override;
-
-    // Callbacks to transition to Replay or Main Menu.
+    
     std::function<void()> onReplay;
     std::function<void()> onMainMenu;
 

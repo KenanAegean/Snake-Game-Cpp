@@ -16,13 +16,9 @@ GameOverState::GameOverState(const std::wstring& message, const std::wstring& wi
 
 GameOverState::~GameOverState() {}
 
-void GameOverState::Init(SnakeGraphics* graphics) {
-    // Additional initialization if needed.
-}
+void GameOverState::Init(SnakeGraphics* graphics) {}
 
-void GameOverState::Update(float deltaTime) {
-    // Optional: animate menu options if desired.
-}
+void GameOverState::Update(float deltaTime) {}
 
 void GameOverState::Render(SnakeGraphics* graphics) {
     // Clear the screen.
@@ -34,21 +30,21 @@ void GameOverState::Render(SnakeGraphics* graphics) {
     }
     
     int centerX = graphics->GetNumColumns() / 2;
-    int centerY = graphics->GetNumRows() / 2 - 4; // Adjust vertical position as needed.
+    int centerY = graphics->GetNumRows() / 2 - 4;
     
-    // Render "Game Over" at the center.
+    // Render "Game Over"
     graphics->PlotText(centerX, centerY, 1, backgroundColor, L"Game Over", Color(255, 255, 255), SnakeGraphics::Center);
     
-    // Render winner message if provided.
+    // Render winner message
     if (!winnerMessage.empty()) {
         graphics->PlotText(centerX, centerY + 1, 1, backgroundColor, winnerMessage.c_str(), Color(255, 255, 255), SnakeGraphics::Center);
     }
     
-    // Render score and level.
+    // Render score and level
     std::wstring scoreText = L"Score: " + std::to_wstring(finalScore) + L"   Level: " + std::to_wstring(finalLevel);
     graphics->PlotText(centerX, centerY + 2, 1, backgroundColor, scoreText.c_str(), Color(255, 255, 255), SnakeGraphics::Center);
     
-    // Render menu options below the score.
+    // Render menu options below the score
     int optionY = centerY + 4;
     for (size_t i = 0; i < menuOptions.size(); i++) {
         Color optionBg = (i == selectedOption) ? Color(100, 100, 100) : backgroundColor;
@@ -62,11 +58,11 @@ void GameOverState::KeyDown(int key) {
     } else if (key == VK_DOWN) {
         selectedOption = (selectedOption + 1) % menuOptions.size();
     } else if (key == VK_RETURN) {
-        if (selectedOption == 0) { // Replay
+        if (selectedOption == 0) {
             if (onReplay) {
                 onReplay();
             }
-        } else if (selectedOption == 1) { // Main Menu
+        } else if (selectedOption == 1) {
             if (onMainMenu) {
                 onMainMenu();
             }

@@ -5,7 +5,6 @@
 #include "Apple.h"
 
 MainMenuState::MainMenuState() : selectedOption(0), isMainMenuReturned(false) {
-    // Set up menu options: five game modes and an Exit option.
     menuOptions.push_back(L"One Player");
     menuOptions.push_back(L"Player vs Player");
     menuOptions.push_back(L"Player and Player");
@@ -15,36 +14,41 @@ MainMenuState::MainMenuState() : selectedOption(0), isMainMenuReturned(false) {
     menuOptions.push_back(L"Exit");
 }
 
-void MainMenuState::Init(SnakeGraphics* graphics) {
-    // Additional initialization if needed.
-}
+void MainMenuState::Init(SnakeGraphics* graphics) {}
 
-void MainMenuState::Update(float deltaTime) {
-    // Update animations or transitions if needed.
-}
+void MainMenuState::Update(float deltaTime) {}
 
 void MainMenuState::Render(SnakeGraphics* graphics) {
     Color backgroundColor(0, 0, 0);
-    
-    // If coming back to main menu, clear the screen.
-    if (isMainMenuReturned) {
-        for (int y = 0; y < graphics->GetNumRows(); y++) {
-            for (int x = 0; x < graphics->GetNumColumns(); x++) {
-                graphics->PlotTile(x, y, 0, backgroundColor, backgroundColor, L' ');
-            }
+    for (int y = 0; y < graphics->GetNumRows(); y++) {
+        for (int x = 0; x < graphics->GetNumColumns(); x++) {
+            graphics->PlotTile(x, y, 0, backgroundColor, backgroundColor, L' ');
         }
-        isMainMenuReturned = false;
     }
     
-    int numOptions = static_cast<int>(menuOptions.size());
-    int centerX = graphics->GetNumColumns() / 2;
-    int startY = graphics->GetNumRows() / 2 - numOptions;
+    int numRows = graphics->GetNumRows();
+    int numColumns = graphics->GetNumColumns();
+    int centerX = numColumns / 2;
     
-    for (int i = 0; i < numOptions; i++) {
-        Color bg = (i == selectedOption) ? Color(100, 100, 100) : backgroundColor;
-        graphics->PlotText(centerX, startY + i, 1, bg, menuOptions[i].c_str(), Color(255, 255, 255), SnakeGraphics::Center);
+    graphics->PlotText(centerX, 2, 1, backgroundColor, L"Snake Game Cpp", Color(255, 255, 255), SnakeGraphics::Center);
+    
+    graphics->PlotText(centerX, 5, 1, backgroundColor, L"Game Modes:", Color(255, 255, 255), SnakeGraphics::Center);
+    graphics->PlotText(centerX, 6, 1, backgroundColor, L"-----------------------", Color(255, 255, 255), SnakeGraphics::Center);
+    
+    int startY = 8;
+    for (size_t i = 0; i < menuOptions.size() - 1; i++) {
+        Color optionBg = (selectedOption == i) ? Color(100, 100, 100) : backgroundColor;
+        graphics->PlotText(centerX, startY + static_cast<int>(i), 1, optionBg, menuOptions[i].c_str(), Color(255, 255, 255), SnakeGraphics::Center);
     }
+    
+    // Blank line after game modes
+    int exitY = startY + static_cast<int>(menuOptions.size() - 1) + 1;
+    Color exitBg = (selectedOption == menuOptions.size() - 1) ? Color(100, 100, 100) : backgroundColor;
+    graphics->PlotText(centerX, exitY, 1, exitBg, menuOptions.back().c_str(), Color(255, 255, 255), SnakeGraphics::Center);
+    
+    graphics->PlotText(centerX, numRows - 2, 1, backgroundColor, L"A Kenan Ege Game", Color(255, 255, 255), SnakeGraphics::Center);
 }
+
 
 void MainMenuState::KeyDown(int key) {
     if (key == VK_UP) {
@@ -52,30 +56,26 @@ void MainMenuState::KeyDown(int key) {
     } else if (key == VK_DOWN) {
         selectedOption = (selectedOption + 1) % menuOptions.size();
     } else if (key == VK_RETURN) {
-        // If "Exit" is selected, quit.
         if (selectedOption == static_cast<int>(menuOptions.size()) - 1) {
             PostQuitMessage(0);
         } else {
             if (onStartGame) {
-                Apple::ResetFirstAppleFlag();
                 onStartGame(GetSelectedMode());
+                Apple::ResetFirstAppleFlag();
             }
         }
     }
 }
 
-void MainMenuState::CleanUp() {
-    // Clean up resources if needed.
-}
+void MainMenuState::CleanUp() {}
 
 PlayMode MainMenuState::GetSelectedMode() const {
-    // Map menu index to the corresponding game mode.
     switch(selectedOption) {
         case 0: return PlayMode::OnePlayer;
         case 1: return PlayMode::TwoPlayerVersus;
         case 2: return PlayMode::TwoPlayerCooperative;
         case 3: return PlayMode::PlayerVsAI;
         case 4: return PlayMode::PlayerAndAI;
-        default: return PlayMode::OnePlayer; // Fallback.
+        default: return PlayMode::OnePlayer;
     }
 }
