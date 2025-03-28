@@ -41,7 +41,7 @@ int main() {
         
         gameplayState->onGameOver = [&, gp = gameplayState.get()]() {
             int finalLevel = gp->GetLevel();
-            int finalScore = gp->GetScore(); // default for non-competitive modes
+            int finalScore = gp->GetScore();
             std::wstring winnerMsg = L"";
             // For competitive modes, determine a winner and show the winner's score.
             if (mode == PlayMode::TwoPlayerVersus || mode == PlayMode::PlayerVsAI) {
@@ -61,7 +61,7 @@ int main() {
             auto gameOverState = std::make_unique<GameOverState>(L"Game Over!", winnerMsg, finalScore, finalLevel);
             gameOverState->onReplay = [&, mode]() {
                 // int finalLevel = gp->GetLevel();
-                int finalScore = gp->GetScore(); // default for non-competitive modes
+                int finalScore = gp->GetScore();
                 std::wstring winnerMsg = L"";
                 // For competitive modes, determine a winner and show the winner's score.
                 if (mode == PlayMode::TwoPlayerVersus || mode == PlayMode::PlayerVsAI) {
