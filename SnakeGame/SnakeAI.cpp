@@ -9,7 +9,6 @@
 
 #include "Apple.h"
 
-// Helper structure for A* nodes.
 struct Node {
     int x, y;
     int g; // cost from start
@@ -20,7 +19,7 @@ struct Node {
         : x(_x), y(_y), g(_g), h(_h), f(_g + _h), parentX(_parentX), parentY(_parentY) {}
 };
 
-// Comparison functor for the priority queue (lowest f cost first).
+// Comparison functor for the priority queue (lowest f cost first)
 struct NodeComparator {
     bool operator()(const Node& a, const Node& b) const {
         return a.f > b.f;
@@ -31,7 +30,7 @@ static int Heuristic(int x1, int y1, int x2, int y2) {
     return std::abs(x1 - x2) + std::abs(y1 - y2);
 }
 
-// Compute a penalty cost for cell (x,y) if it's adjacent to a wall.
+// Compute a penalty cost for cell (x,y)
 static int WallPenalty(int x, int y, int gridColumns, int gridRows, World* world) {
     int penalty = 0;
     int directions[4][2] = { {0,-1}, {0,1}, {-1,0}, {1,0} };
@@ -40,29 +39,22 @@ static int WallPenalty(int x, int y, int gridColumns, int gridRows, World* world
         int ny = y + directions[i][1];
         if (nx >= 0 && ny >= 0 && nx < gridColumns && ny < gridRows) {
             if (world->IsWall(nx, ny))
-                penalty += 50; // increased penalty value
+                penalty += 15;
         }
     }
     return penalty;
 }
 
 
-// Modified IsWalkable that accepts the goal cell and the AI snake.
-// It returns true if the cell is inside the grid, is either the goal,
-// is not occupied by any non-apple object, and is not part of aiSnake's body.
 static bool IsWalkable(int x, int y, int gridColumns, int gridRows, World* world, const Vec2& goal, Snake* aiSnake) {
     if (x < 0 || y < 0 || x >= gridColumns || y >= gridRows)
         return false;
-    // Always allow the goal cell (even if it might normally be occupied)
     if (x == goal.x && y == goal.y)
         return true;
-    // Explicitly reject wall cells.
     if (world->IsWall(x, y))
         return false;
-    // Also reject cells that are occupied by other objects.
     if (world->IsOccupied(x, y))
         return false;
-    // Prevent the AI from planning a route through its own body (except the head)
     const std::deque<Vec2>& segments = aiSnake->GetSegments();
     for (size_t i = 1; i < segments.size(); i++) {
         if (segments[i].x == x && segments[i].y == y)
@@ -123,10 +115,9 @@ Direction SnakeAI::GetDirection(const Vec2& start, const Vec2& next) {
     if (next.x < start.x) return Direction::Left;
     if (next.y > start.y) return Direction::Down;
     if (next.y < start.y) return Direction::Up;
-    return Direction::Right; // Default case.
+    return Direction::Up; // Default direction
 }
 
-// Helper function to check if two directions are opposites.
 static bool IsOpposite(Direction a, Direction b) {
     return (a == Direction::Up && b == Direction::Down) ||
            (a == Direction::Down && b == Direction::Up) ||
@@ -137,7 +128,7 @@ static bool IsOpposite(Direction a, Direction b) {
 void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRows) {
     // Skip AI target until the second apple is created
     if (!Apple::isFirstAppleCreated) {
-        return; // AI should wait before targeting
+        return;
     }
 
     // Retrieve the apple's position.
@@ -146,15 +137,14 @@ void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRo
         return;
     
     Vec2 head = aiSnake->GetSegments().front();
-    // Compute the path using A* (which avoids walls, snake's own body, etc.)
+    // Compute the path using A*
     std::vector<Vec2> path = FindPath(head, applePos, gridColumns, gridRows, world, aiSnake);
     
     Direction currentDir = aiSnake->GetCurrentDirection();
-    Direction chosenDir = currentDir; // default to current direction
+    Direction chosenDir = currentDir;
     
     if (path.size() >= 2) {
         chosenDir = GetDirection(head, path[1]);
-        // If the candidate move is a U-turn relative to the current direction, look further into the path.
         if (IsOpposite(chosenDir, currentDir)) {
             bool foundAlternative = false;
             for (size_t i = 2; i < path.size(); i++) {
@@ -180,7 +170,6 @@ void SnakeAI::UpdateAI(Snake* aiSnake, World* world, int gridColumns, int gridRo
     }
     
     if (world->IsOccupied(next.x, next.y) || world->IsWall(next.x, next.y)) {
-        // Fallback: Evaluate all candidate directions (except the one that's a U-turn)
         std::vector<Direction> safeDirections;
         Direction directions[4] = { Direction::Up, Direction::Down, Direction::Left, Direction::Right };
         for (Direction d : directions) {

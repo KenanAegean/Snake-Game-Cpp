@@ -13,7 +13,7 @@ public:
     virtual bool IsActive() const override { return active; }
     void Deactivate() { active = false; }
 
-    static void ResetFirstAppleFlag(); // Reset method added
+    static void ResetFirstAppleFlag();
     static bool isFirstAppleCreated;
 
 private:

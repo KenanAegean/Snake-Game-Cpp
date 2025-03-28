@@ -17,6 +17,5 @@ public:
     virtual void Render(SnakeGraphics* graphics) = 0;
     virtual void OnCollision(GameObject* other) = 0;
     
-    // By default, objects are active.
     virtual bool IsActive() const { return true; }
 };

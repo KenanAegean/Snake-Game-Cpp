@@ -29,7 +29,6 @@ void Apple::OnCollision(GameObject* other) {
     }
 }
 
-// New method implementation
 void Apple::ResetFirstAppleFlag() {
     isFirstAppleCreated = false;
 }

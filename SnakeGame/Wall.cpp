@@ -9,17 +9,11 @@ Wall::Wall(const Vec2& pos)
         
 Wall::~Wall() {}
 
-void Wall::Update(float deltaTime) {
-    // Walls are static and do not update.
-}
+void Wall::Update(float deltaTime) {}
 
 void Wall::Render(SnakeGraphics* graphics) {
-    // Render the wall as a grey block.
-    Color wallColor(128, 128, 128); // grey
+    Color wallColor(128, 128, 128);
     graphics->PlotTile(position.x, position.y, 1, wallColor, wallColor, L'#');
 }
 
-void Wall::OnCollision(GameObject* other) {
-    // Walls don't react to collisions.
-    // You might handle collision effects (e.g., game over) in your snake's collision logic.
-}
+void Wall::OnCollision(GameObject* other) {}

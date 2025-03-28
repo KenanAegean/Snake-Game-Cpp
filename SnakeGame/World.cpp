@@ -3,7 +3,7 @@
 #include "Snake.h"
 #include "Wall.h"
 #include <algorithm>
-#include <cstdlib> // For rand()
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 
@@ -17,7 +17,6 @@ void World::Update(float deltaTime) {
     }
     CheckCollisions();
     
-    // Remove inactive objects (e.g., apples that have been eaten).
     gameObjects.erase(
         std::remove_if(gameObjects.begin(), gameObjects.end(),
             [](const std::unique_ptr<GameObject>& obj) {
@@ -25,7 +24,6 @@ void World::Update(float deltaTime) {
             }),
         gameObjects.end());
     
-    // Check if an apple exists. If not, spawn a new one.
     bool appleExists = false;
     for (const auto& obj : gameObjects) {
         if (dynamic_cast<Apple*>(obj.get()) != nullptr) {
@@ -34,7 +32,6 @@ void World::Update(float deltaTime) {
         }
     }
     if (!appleExists) {
-        // Here, grid dimensions are assumed (e.g., 40 columns and 30 rows).
         SpawnApple(40, 30);
     }
 }
@@ -49,12 +46,9 @@ void World::AddGameObject(std::unique_ptr<GameObject> obj) {
     gameObjects.push_back(std::move(obj));
 }
 
-void World::RemoveGameObject(GameObject* obj) {
-    // Removal logic can be implemented if needed.
-}
+void World::RemoveGameObject(GameObject* obj) {}
 
 void World::CheckCollisions() {
-    // Simple collision detection: check if any two objects occupy the same tile.
     for (size_t i = 0; i < gameObjects.size(); i++) {
         for (size_t j = i + 1; j < gameObjects.size(); j++) {
             if (gameObjects[i]->position.x == gameObjects[j]->position.x &&
@@ -104,10 +98,8 @@ void World::SpawnApple(int maxColumns, int maxRows) {
     } while (!validPosition && attempts < maxAttempts);
 
     auto apple = std::make_unique<Apple>(Vec2{x, y});
-
-    // Check immediately if apple is active. If not, it's the first apple.
+    
     if (!apple->IsActive()) {
-        // Immediately discard this apple and spawn a new one.
         SpawnApple(maxColumns, maxRows);
         return;
     }
@@ -147,7 +139,6 @@ void World::ClearWalls() {
             }),
         gameObjects.end());
     
-    // Reset the first apple flag if world is cleared
     Apple::ResetFirstAppleFlag();
 }
 
@@ -158,13 +149,12 @@ Vec2 World::GetApplePosition() const {
             return apple->position;
         }
     }
-    return Vec2{-1, -1}; // No active apple found.
+    return Vec2{-1, -1};
 }
 
 bool World::IsOccupied(int x, int y) const {
     for (const auto& obj : gameObjects) {
         if (obj->position.x == x && obj->position.y == y) {
-            // If the object is an apple, ignore it as an obstacle.
             if (dynamic_cast<Apple*>(obj.get()) != nullptr) {
                 continue;
             }
@@ -177,7 +167,6 @@ bool World::IsOccupied(int x, int y) const {
 
 bool World::IsWall(int x, int y) const {
     for (const auto& obj : gameObjects) {
-        // Check if the object is a wall.
         if (obj->position.x == x && obj->position.y == y) {
             if (dynamic_cast<Wall*>(obj.get()) != nullptr)
                 return true;
@@ -185,4 +174,3 @@ bool World::IsWall(int x, int y) const {
     }
     return false;
 }
-

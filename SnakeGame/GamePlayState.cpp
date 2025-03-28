@@ -16,7 +16,7 @@ GamePlayState::GamePlayState()
       currentLevel(1), applesEatenThisLevel(0),
       gameOverTriggered(false)
 {
-    // Set default game mode (can be modified by the caller).
+    // Set default game mode
     settings.mode = PlayMode::OnePlayer;
     settings.targetScore = 15;
 }
@@ -24,20 +24,20 @@ GamePlayState::GamePlayState()
 GamePlayState::~GamePlayState() {}
 
 void GamePlayState::Init(SnakeGraphics* graphics) {
-    // Create the game world.
+    // Create the game world
     world = std::make_unique<World>();
 
-    // Get grid dimensions.
+    // Get grid dimensions
     gridColumns = graphics->GetNumColumns();
     gridRows    = graphics->GetNumRows();
 
-    // Clear any previous players.
+    // Clear any previous players
     players.clear();
 
     int centerX = gridColumns / 2;
     int centerY = gridRows / 2;
 
-    // Create snake objects based on the selected game mode.
+    // Create snake objects based on the selected game mode
     switch(settings.mode) {
         case PlayMode::OnePlayer: {
             std::unique_ptr<Snake> snake1 = std::make_unique<Snake>(Vec2{ centerX, centerY });
@@ -49,7 +49,7 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
         }
         case PlayMode::TwoPlayerVersus: {
             std::unique_ptr<Snake> snake1 = std::make_unique<Snake>(Vec2{ centerX - 3, centerY });
-            std::unique_ptr<Snake> snake2 = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
+            std::unique_ptr<Snake> snake2 = std::make_unique<Snake>(Vec2{ centerX + 3, centerY }, Color(0, 0, 255));
             Snake* s1 = snake1.get();
             Snake* s2 = snake2.get();
             s1->onAppleEaten = [this]() { HandleAppleEaten(0); };
@@ -62,7 +62,7 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
         }
         case PlayMode::TwoPlayerCooperative: {
             std::unique_ptr<Snake> snake1 = std::make_unique<Snake>(Vec2{ centerX - 3, centerY });
-            std::unique_ptr<Snake> snake2 = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
+            std::unique_ptr<Snake> snake2 = std::make_unique<Snake>(Vec2{ centerX + 3, centerY }, Color(0, 0, 255));
             Snake* s1 = snake1.get();
             Snake* s2 = snake2.get();
             s1->onAppleEaten = [this]() { HandleAppleEaten(0); };
@@ -74,8 +74,8 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
             break;
         }
         case PlayMode::PlayerVsAI: {
-            std::unique_ptr<Snake> playerSnake = std::make_unique<Snake>(Vec2{ centerX - 3, centerY });
-            std::unique_ptr<Snake> aiSnake     = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
+            std::unique_ptr<Snake> playerSnake = std::make_unique<Snake>(Vec2{ centerX - 18, centerY });
+            std::unique_ptr<Snake> aiSnake     = std::make_unique<Snake>(Vec2{ centerX + 18, centerY }, Color(0, 0, 255));
             Snake* s1 = playerSnake.get();
             Snake* s2 = aiSnake.get();
             s1->onAppleEaten = [this]() { HandleAppleEaten(0); };
@@ -87,8 +87,8 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
             break;
         }
         case PlayMode::PlayerAndAI: {
-            std::unique_ptr<Snake> playerSnake = std::make_unique<Snake>(Vec2{ centerX - 3, centerY });
-            std::unique_ptr<Snake> aiSnake     = std::make_unique<Snake>(Vec2{ centerX + 3, centerY });
+            std::unique_ptr<Snake> playerSnake = std::make_unique<Snake>(Vec2{ centerX - 18, centerY });
+            std::unique_ptr<Snake> aiSnake     = std::make_unique<Snake>(Vec2{ centerX + 18, centerY }, Color(0, 0, 255));
             Snake* s1 = playerSnake.get();
             Snake* s2 = aiSnake.get();
             s1->onAppleEaten = [this]() { HandleAppleEaten(0); };
@@ -102,12 +102,11 @@ void GamePlayState::Init(SnakeGraphics* graphics) {
 
     }
 
-    // Load the initial level and spawn an apple.
+    // Load the initial level and spawn an apple
     world->LoadLevel("level1.txt");
     world->SpawnApple(gridColumns, gridRows);
 }
 
-// New function: called whenever any snake eats an apple.
 void GamePlayState::HandleAppleEaten(int playerIndex) {
     players[playerIndex].score++;
     applesEatenThisLevel++;
@@ -130,8 +129,7 @@ void GamePlayState::Update(float deltaTime) {
         world->Update(deltaTime);
     }
     
-    // Check collisions for each player's snake.
-    // (Now, in any mode, if a snake collides, we trigger game over.)
+    // Check collisions for each player's snake
     for (auto& player : players) {
         if (player.isAI && player.snake) {
             SnakeAI::UpdateAI(player.snake, world.get(), gridColumns, gridRows);
@@ -152,7 +150,7 @@ void GamePlayState::Update(float deltaTime) {
         }
     }
     
-    // --- Scoring and Game End Conditions ---
+    // Scoring and Game End Conditions
     bool isCompetitive = (settings.mode == PlayMode::OnePlayer ||
                           settings.mode == PlayMode::TwoPlayerVersus ||
                           settings.mode == PlayMode::PlayerVsAI);
@@ -160,7 +158,7 @@ void GamePlayState::Update(float deltaTime) {
                           settings.mode == PlayMode::PlayerAndAI);
     
     if (isCompetitive) {
-        // For competitive modes, if any player's score reaches the target, trigger game over.
+        // For competitive modes, if any player's score reaches the target, trigger game over
         for (auto& player : players) {
             if (player.score >= settings.targetScore) {
                 if (!gameOverTriggered && onGameOver) {
@@ -171,7 +169,7 @@ void GamePlayState::Update(float deltaTime) {
             }
         }
     } else if (isCooperative) {
-        // For cooperative modes, trigger game over when the combined score reaches the target.
+        // For cooperative modes, trigger game over when the combined score reaches the target
         int totalScore = 0;
         for (auto& player : players) {
             totalScore += player.score;
@@ -200,9 +198,8 @@ void GamePlayState::Render(SnakeGraphics* graphics) {
         world->Render(graphics);
     }
     
-    // Display score and level information.
+    // Display score and level information
     std::wstringstream ss;
-    // For competitive modes, display separate scores for Player 1 and Player 2.
     if (settings.mode == PlayMode::TwoPlayerVersus || settings.mode == PlayMode::PlayerVsAI) {
         ss << L"P1: " << players[0].score << L"   P2: " << players[1].score 
            << L"   Level: " << currentLevel;
@@ -210,26 +207,10 @@ void GamePlayState::Render(SnakeGraphics* graphics) {
         ss << L"Score: " << GetScore() << L"   Level: " << currentLevel;
     }
     graphics->PlotText(1, 0, 2, backgroundColor, ss.str().c_str(), Color(255, 255, 255), SnakeGraphics::Left);
-
-    // At the end of GamePlayState::Render, after drawing game objects:
-    //for (size_t i = 0; i < players.size(); i++) {
-    //    // Only visualize for AI-controlled snakes.
-    //    if (players[i].isAI && players[i].snake) {
-    //        Vec2 head = players[i].snake->GetSegments().front();
-    //        Vec2 applePos = world->GetApplePosition();
-    //        // Compute the AI path from the snake's head to the apple.
-    //        std::vector<Vec2> aiPath = SnakeAI::FindPath(head, applePos, gridColumns, gridRows, world.get(), players[i].snake);
-    //        // Draw a dot on each cell in the path.
-    //        for (const Vec2& cell : aiPath) {
-    //            // Plot a blue dot with order 3 so it appears above most tiles.
-    //            graphics->PlotTile(cell.x, cell.y, 3, Color(0, 0, 255), Color(0, 0, 255), L'.');
-    //        }
-    //    }
-    //}
 }
 
 void GamePlayState::KeyDown(int key) {
-    // Player 1: Arrow keys.
+    // Player 1 Arrow keys
     if (!players.empty() && players[0].snake) {
         switch (key) {
             case VK_UP:    players[0].snake->ChangeDirection(Direction::Up); break;
@@ -239,7 +220,7 @@ void GamePlayState::KeyDown(int key) {
         }
     }
     
-    // Player 2: WASD keys (if present and not AI).
+    // Player 2 WASD keys
     if (players.size() >= 2 && !players[1].isAI && players[1].snake) {
         switch (key) {
             case 'W':  players[1].snake->ChangeDirection(Direction::Up); break;
