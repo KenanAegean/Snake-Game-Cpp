@@ -4,7 +4,7 @@ A C++ console-based Snake game featuring multiple play modes, AI-controlled snak
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/600b5d6d-3041-42a5-b0d7-e50ef61a2211" width="250" title="hover text"><br>
-  <a href="">Download</a>
+  <a href="https://github.com/KenanAegean/Snake-Game-Cpp/releases">Download</a>
 </p>
 
 ---
