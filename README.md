@@ -43,7 +43,7 @@ The game supports **five different play modes**:
 ---
 
 ## 🧱 Walls and Obstacles
-- Walls are loaded dynamically from the `level1.txt` file.
+- Walls are loaded dynamically from the `level1.txt`, `level2.txt` and `level3.txt` files.
 - Colliding with walls triggers a **Game Over**.
 - Levels are cleared when the player progresses, and walls are reloaded from the next level.
 
@@ -59,7 +59,7 @@ The game supports **five different play modes**:
 ## 📜 How to Play
 1. **Launch the Game:**
    ```
-   ./SnakeGame.exe
+   SnakeGame.exe
    ```
 2. **Select Game Mode:**
    - Use the arrow keys to select a mode and press `Enter`.
@@ -69,22 +69,6 @@ The game supports **five different play modes**:
    - Hitting a wall.
    - Self-collision.
    - Opponent achieving the target score (in versus mode).
-
----
-
-## 🖥️ Installation and Compilation
-### Prerequisites:
-- Windows OS with Visual Studio or any C++ compiler.
-- Required libraries: `windows.h` for graphics.
-- Open the project in Visual Studio or compile using:
-```bash
-g++ -o SnakeGame SnakeGame.cpp -lgdi32
-```
-
-### Running the Game
-```bash
-./SnakeGame
-```
 
 ---
 
@@ -131,26 +115,10 @@ g++ -o SnakeGame SnakeGame.cpp -lgdi32
 
 ---
 
-## 🐛 Debug Tips
-- If you encounter issues with AI replay, make sure to check the console logs:
-```cpp
-std::cout << "Snake initialized for mode: " << static_cast<int>(settings.mode) << "
-";
-```
-- Verify that `Apple::ResetFirstAppleFlag()` is correctly resetting after game over.
-
----
-
-## 💡 Future Enhancements
-- Add different wall layouts in later levels.
-- Introduce power-ups for snakes.
-- Add speed scaling as the game progresses.
-
----
 
 ## 👨‍💻 Author
 **Kenan Ege**  
-Passionate Game Developer | AI Enthusiast  
+Passionate Game Developer 
 
 ---
 
