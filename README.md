@@ -26,6 +26,16 @@ The game supports **five different play modes**:
 
 ---
 
+## Screenshots
+
+Screenshots           |  Screenshots 
+:-------------------------:|:-------------------------:
+![](ForReadme/1.png)  |  ![](ForReadme/3.png)
+![](ForReadme/2.png)  |  ![](ForReadme/4.png)
+
+
+---
+
 ## 🕹️ Controls
 ### Player 1:
 - **Arrow Keys:** Control movement.
